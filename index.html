@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMS2 Sim Racing Career & Event Hub</title>
+  <meta name="theme-color" content="#0B0D11" />
+  <meta name="description" content="Track your Automobilista 2 racing career, events, and milestones." />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon-192.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  
+  <link rel="stylesheet" href="app.css" />
+
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0B0D11;
+      color: #E2E8F0;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(255, 184, 0, 0.03) 0%, transparent 40%),
+        linear-gradient(to bottom, rgba(11, 13, 17, 0.95), rgba(11, 13, 17, 0.98));
+    }
+
+    .carbon-card {
+      background: linear-gradient(135deg, rgba(18, 22, 31, 0.8) 0%, rgba(26, 32, 44, 0.6) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .carbon-card:hover {
+      border-color: rgba(0, 240, 255, 0.3);
+    }
+
+    .neon-border-glow {
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+    }
+
+    .neon-text-glow {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0D11;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2D3748;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00F0FF;
+    }
+
+    /* Telemetry Gauge Animations */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-neon-cyan selection:text-black">
+
+  <header class="sticky top-0 z-50 bg-carbon-900/90 backdrop-blur-md border-b border-gray-800/80 px-4 lg:px-8 py-3">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-neon-cyan via-blue-600 to-indigo-700 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-neon-cyan/20">
+            <i class="fa-solid fa-flag-checkered text-black"></i>
+          </div>
+          <div>
+            <h1 class="font-extrabold text-lg tracking-wider text-white flex items-center gap-2">
+              AMS2 <span class="text-neon-cyan">HUB</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono">v2.5 PRO</span>
+            </h1>
+            <p class="text-xs text-gray-400 font-medium">Automobilista 2 Sim Racing Career Manager</p>
+          </div>
+        </div>
+
+        <!-- Quick Telemetry Status Pill (Mobile View toggle inside header) -->
+        <div class="flex items-center gap-2 md:hidden">
+          <a id="steam-login-mobile" href="/api/auth" class="px-3 py-1.5 rounded-lg bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs">
+            <i class="fa-brands fa-steam"></i> Sign in
+          </a>
+          <button id="steam-logout-mobile" onclick="signOut()" class="hidden px-3 py-1.5 rounded-lg bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">Sign out</button>
+          <button id="quick-log-btn-mobile" onclick="openModal('log-race-modal')" class="px-3 py-1.5 rounded-lg bg-neon-cyan text-black font-bold text-xs hover:bg-cyan-300 transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i> Log Race
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center gap-1 bg-carbon-800/80 p-1 rounded-xl border border-gray-800 w-full md:w-auto justify-center overflow-x-auto">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn active px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 transition-all text-neon-cyan bg-carbon-700/80 border border-neon-cyan/20">
+          <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </button>
+        <button onclick="switchTab('career')" id="nav-career" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
+          <i class="fa-solid fa-trophy"></i> Career & Ladder
+        </button>
+        <button onclick="switchTab('events')" id="nav-events" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
+          <i class="fa-solid fa-calendar-days"></i> Race Calendar
+        </button>
+        <button onclick="switchTab('live-telemetry')" id="nav-live-telemetry" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
+          <i class="fa-solid fa-satellite-dish"></i> CREST & Live
+        </button>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="hidden md:flex items-center gap-3">
+        <a id="steam-login-link" href="/api/auth" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs flex items-center gap-2">
+          <i class="fa-brands fa-steam text-sm"></i> Sign in with Steam
+        </a>
+        <button id="steam-logout-button" onclick="signOut()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">
+          Sign out
+        </button>
+        <button onclick="openModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-neon-cyan to-blue-500 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-neon-cyan/20 flex items-center gap-2">
+          <i class="fa-solid fa-plus text-sm"></i> Log Race Result
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTENT WRAPPER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      
+      <!-- Top Driver Profile Summary Banner -->
+      <div class="carbon-card rounded-2xl p-6 relative overflow-hidden">
+        <div class="absolute -right-12 -top-12 w-64 h-64 bg-neon-cyan/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
+          
+          <!-- Driver Info Card -->
+          <div class="lg:col-span-2 flex items-center gap-4">
+            <div class="relative">
+              <div id="driver-avatar" class="w-20 h-20 rounded-2xl bg-carbon-700 border-2 border-neon-cyan flex items-center justify-center text-3xl font-extrabold text-neon-cyan shadow-lg shadow-neon-cyan/20">
+                DR
+              </div>
+              <span id="safety-badge-pill" class="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-neon-green text-black border border-black shadow">
+                S240
+              </span>
+            </div>
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <h2 id="driver-name-display" class="text-2xl font-extrabold text-white tracking-tight">Apex Driver</h2>
+                <i class="fa-solid fa-circle-check text-neon-cyan text-sm" title="Verified Driver"></i>
+              </div>
+              <p id="driver-title-display" class="text-xs text-neon-cyan font-mono font-semibold tracking-wide uppercase">GT3 Aspirant • Tier 2</p>
+              <div class="flex items-center gap-3 text-xs text-gray-400 pt-1">
+                <span class="flex items-center gap-1"><i class="fa-brands fa-steam text-gray-300"></i> <span id="steam-status-display">Steam Linked</span></span>
+                <span>•</span>
+                <span class="flex items-center gap-1"><i class="fa-solid fa-shield-halved text-neon-amber"></i> Grade: <strong id="skill-grade-display" class="text-white">Silver II</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- XP & Level Progress -->
+          <div class="lg:col-span-2 space-y-2 bg-carbon-900/60 p-4 rounded-xl border border-gray-800">
+            <div class="flex justify-between items-center text-xs font-semibold">
+              <span class="text-gray-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-bolt text-neon-amber"></i> Driver Level Progress
+              </span>
+              <span class="text-white font-mono">Level <span id="driver-level-val">12</span> (<span id="driver-xp-val">3,450</span> / <span id="driver-next-xp-val">5,000</span> XP)</span>
+            </div>
+            <div class="w-full h-3 bg-carbon-700 rounded-full overflow-hidden p-0.5 border border-gray-700">
+              <div id="driver-xp-bar" class="h-full bg-gradient-to-r from-neon-amber via-yellow-400 to-neon-cyan rounded-full transition-all duration-500" style="width: 69%;"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-gray-400 pt-1">
+              <span>Next Reward: <strong class="text-neon-cyan" id="next-reward-display">GT3 Master Badge</strong></span>
+              <span id="xp-remaining-display" class="font-mono text-neon-amber">1,550 XP needed</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Quick Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="carbon-card p-4 rounded-xl space-y-1">
+          <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            Total Races <i class="fa-solid fa-flag-checkered text-gray-500"></i>
+          </div>
+          <div id="stat-races" class="text-2xl font-extrabold text-white font-mono">48</div>
+          <div class="text-[11px] text-neon-cyan flex items-center gap-1">
+            <i class="fa-solid fa-arrow-trend-up"></i> +4 this week
+          </div>
+        </div>
+
+        <div class="carbon-card p-4 rounded-xl space-y-1">
+          <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            Race Wins <i class="fa-solid fa-trophy text-neon-amber"></i>
+          </div>
+          <div id="stat-wins" class="text-2xl font-extrabold text-neon-amber font-mono">14</div>
+          <div class="text-[11px] text-gray-400 flex items-center gap-1">
+            Win Rate: <span id="stat-win-rate" class="text-white font-bold">29.1%</span>
+          </div>
+        </div>
+
+        <div class="carbon-card p-4 rounded-xl space-y-1">
+          <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            Podiums <i class="fa-solid fa-award text-blue-400"></i>
+          </div>
+          <div id="stat-podiums" class="text-2xl font-extrabold text-blue-400 font-mono">27</div>
+          <div class="text-[11px] text-gray-400 flex items-center gap-1">
+            Podium Rate: <span id="stat-podium-rate" class="text-white font-bold">56.2%</span>
+          </div>
+        </div>
+
+        <div class="carbon-card p-4 rounded-xl space-y-1">
+          <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
+            Clean Race Rate <i class="fa-solid fa-shield-cat text-neon-green"></i>
+          </div>
+          <div id="stat-clean-rate" class="text-2xl font-extrabold text-neon-green font-mono">88.5%</div>
+          <div class="text-[11px] text-neon-green flex items-center gap-1">
+            Avg Incidents: <span id="stat-avg-incidents" class="text-white font-bold">2.1</span>/race
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Grid Layout (Target Calculator & Scheduled Event Widget) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Target Goal Calculator & License Breakdown -->
+        <div class="lg:col-span-2 carbon-card rounded-2xl p-6 space-y-5">
+          <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+            <div>
+              <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-calculator text-neon-cyan"></i> Target Goal Calculator & Rating Status
+              </h3>
+              <p class="text-xs text-gray-400">Personal career ratings calculated from your logged results; not official AMS2 ratings.</p>
+            </div>
+            <button onclick="openModal('rating-override-modal')" class="text-xs px-3 py-1.5 rounded-lg bg-carbon-700 hover:bg-carbon-600 text-neon-cyan border border-neon-cyan/30 transition-all">
+              <i class="fa-solid fa-sliders"></i> Edit Ratings
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Safety Rating Progress -->
+            <div class="bg-carbon-900/80 p-4 rounded-xl border border-gray-800 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase text-gray-300">Career Safety (app-tracked)</span>
+                <span id="safety-rank-text" class="text-xs font-mono font-bold text-neon-green px-2 py-0.5 rounded bg-neon-green/10">S-Grade</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span id="safety-score-num" class="text-3xl font-extrabold font-mono text-white">240</span>
+                <span class="text-xs text-gray-400">/ 300 Max</span>
+              </div>
+              <div class="w-full h-2 bg-carbon-700 rounded-full overflow-hidden">
+                <div id="safety-bar" class="h-full bg-neon-green transition-all" style="width: 80%;"></div>
+              </div>
+              <div id="safety-calculator-hint" class="text-xs text-gray-400">
+                Need <span class="text-neon-green font-bold">+20 SR</span> to reach <strong class="text-white">S260 Master Grade</strong>. Keep incidents below 3 in 2 races.
+              </div>
+            </div>
+
+            <!-- Skill Rating Progress -->
+            <div class="bg-carbon-900/80 p-4 rounded-xl border border-gray-800 space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold uppercase text-gray-300">Career Skill (app-tracked)</span>
+                <span id="skill-rank-text" class="text-xs font-mono font-bold text-neon-amber px-2 py-0.5 rounded bg-neon-amber/10">Silver II</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span id="skill-score-num" class="text-3xl font-extrabold font-mono text-white">1,680</span>
+                <span class="text-xs text-gray-400">Points</span>
+              </div>
+              <div class="w-full h-2 bg-carbon-700 rounded-full overflow-hidden">
+                <div id="skill-bar" class="h-full bg-neon-amber transition-all" style="width: 56%;"></div>
+              </div>
+              <div id="skill-calculator-hint" class="text-xs text-gray-400">
+                Need <span class="text-neon-amber font-bold">+120 Skill Points</span> to unlock <strong class="text-white">Silver III Tier</strong>. Approx. 2 Top-3 finishes.
+              </div>
+            </div>
+          </div>
+
+          <!-- Rating Progression Pathway Indicator -->
+          <div class="pt-2">
+            <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Personal Career Tier Milestones</h4>
+            <div class="grid grid-cols-4 gap-2 text-center text-xs">
+              <div class="p-2 rounded-lg bg-carbon-900/50 border border-gray-800">
+                <p class="font-bold text-gray-300">Bronze</p>
+                <p class="text-[10px] text-gray-500 font-mono">0 - 1,499</p>
+              </div>
+              <div class="p-2 rounded-lg bg-neon-cyan/10 border border-neon-cyan/40">
+                <p class="font-bold text-neon-cyan">Silver</p>
+                <p class="text-[10px] text-neon-cyan/80 font-mono">1,500 - 1,999</p>
+              </div>
+              <div class="p-2 rounded-lg bg-carbon-900/50 border border-gray-800">
+                <p class="font-bold text-neon-amber">Gold</p>
+                <p class="text-[10px] text-gray-500 font-mono">2,000 - 2,499</p>
+              </div>
+              <div class="p-2 rounded-lg bg-carbon-900/50 border border-gray-800">
+                <p class="font-bold text-purple-400">Platinum / Alien</p>
+                <p class="text-[10px] text-gray-500 font-mono">2,500+</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next Scheduled Event Widget with Countdown -->
+        <div class="carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-4">
+          <div class="space-y-2 border-b border-gray-800 pb-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 uppercase">Next Scheduled Race</span>
+              <i class="fa-solid fa-clock text-neon-cyan animate-pulse"></i>
+            </div>
+            <h3 id="next-event-title" class="text-lg font-bold text-white">Nürburgring Endurance GT3</h3>
+            <p id="next-event-class" class="text-xs text-gray-400 font-mono"><i class="fa-solid fa-car text-gray-500"></i> GT3 Gen2 • Nürburgring Nordschleife</p>
+          </div>
+
+          <!-- Countdown Display -->
+          <div class="bg-carbon-900/90 p-4 rounded-xl border border-neon-cyan/20 text-center space-y-1">
+            <span class="text-[10px] uppercase tracking-widest text-gray-400">Session Starts In</span>
+            <div id="countdown-timer" class="text-2xl font-mono font-extrabold text-neon-cyan tracking-wider">
+              01d : 04h : 12m : 45s
+            </div>
+          </div>
+
+          <!-- Quick Launch / Strategy Checklist -->
+          <div class="space-y-2">
+            <p class="text-xs font-bold text-gray-300">Pre-Race Prep Checklist:</p>
+            <div class="space-y-1 text-xs text-gray-400">
+              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                <input type="checkbox" checked class="rounded accent-neon-cyan bg-carbon-800"> Fuel & Pit Strategy Configured
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                <input type="checkbox" checked class="rounded accent-neon-cyan bg-carbon-800"> Weather Radar Checked (Rain Prep)
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                <input type="checkbox" class="rounded accent-neon-cyan bg-carbon-800"> FFB & Pedals Calibrated
+              </label>
+            </div>
+          </div>
+
+          <button onclick="switchTab('events')" class="w-full py-2.5 rounded-xl bg-carbon-700 hover:bg-carbon-600 text-white font-bold text-xs uppercase tracking-wider transition-all border border-gray-700 flex items-center justify-center gap-2">
+            View All Scheduled Events <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Recent Logged Races Activity Table -->
+      <div class="carbon-card rounded-2xl p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-list-check text-neon-cyan"></i> Recent Race Activity Log
+            </h3>
+            <p class="text-xs text-gray-400">Historical performance breakdown and rating changes in AMS2</p>
+          </div>
+          <button onclick="openModal('log-race-modal')" class="text-xs px-3 py-1.5 rounded-lg bg-neon-cyan text-black font-bold hover:bg-cyan-300 transition-all">
+            + Add Result
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono border-b border-gray-800">
+              <tr>
+                <th class="p-3">Date</th>
+                <th class="p-3">Track / Circuit</th>
+                <th class="p-3">Car Class</th>
+                <th class="p-3">Finish Pos</th>
+                <th class="p-3">Incidents</th>
+                <th class="p-3">XP Earned</th>
+                <th class="p-3">Rating Δ</th>
+              </tr>
+            </thead>
+            <tbody id="recent-races-tbody" class="divide-y divide-gray-800/60 font-medium">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- TAB 2: CAREER & LADDER PROGRESSION -->
+    <section id="tab-career" class="tab-content hidden space-y-6">
+      
+      <!-- Career Overview Header Banner -->
+      <div class="carbon-card rounded-2xl p-6 space-y-2">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
+              <i class="fa-solid fa-sitemap text-neon-cyan"></i> AMS2 Driver Career Ladder
+            </h2>
+            <p class="text-xs text-gray-400">Progress through 5 tier discipline steps from amateur karting to top-tier Formula 1 and Endurance Hypercars.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-3 py-1.5 rounded-lg bg-carbon-800 text-neon-amber font-mono font-bold border border-neon-amber/30">
+            Active Tier: <span id="career-current-tier-text">Tier 1 - Karting & Club Racing</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Career Progression Tiers Ladder -->
+      <div class="space-y-4" id="career-tiers-container">
+        <!-- Tier cards injected via JS -->
+      </div>
+
+      <!-- Badges, Milestones & Trophy Showcase -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        
+        <!-- Trophy Showcase -->
+        <div class="carbon-card rounded-2xl p-6 space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-neon-amber"></i> Trophy Room & Achievements
+          </h3>
+          <div class="grid grid-cols-3 gap-3" id="trophy-grid-container">
+            <!-- Trophies injected via JS -->
+          </div>
+        </div>
+
+        <!-- Driver License Card Preview -->
+        <div class="carbon-card rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center justify-between">
+              <span><i class="fa-solid fa-id-card text-neon-cyan"></i> Career License Card</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-cyan/20 text-neon-cyan">APP TRACKED</span>
+            </h3>
+            <p class="text-xs text-gray-400">Personal career card; ratings shown here are not official AMS2 multiplayer ratings.</p>
+          </div>
+
+          <div class="bg-gradient-to-br from-carbon-800 via-carbon-900 to-black p-5 rounded-2xl border border-neon-cyan/30 space-y-4 relative overflow-hidden shadow-2xl">
+            <div class="absolute -right-8 -bottom-8 opacity-10 text-neon-cyan">
+              <i class="fa-solid fa-car text-9xl"></i>
+            </div>
+            
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest">Automobilista 2 License</p>
+                <h4 id="card-driver-name" class="text-xl font-black text-white">Apex Driver</h4>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-mono font-bold text-neon-cyan px-2 py-1 rounded bg-neon-cyan/10 border border-neon-cyan/30">
+                  AMS2-60291
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 py-2 border-y border-gray-800/80 text-center">
+              <div>
+                <p class="text-[9px] text-gray-500 uppercase">Career Safety</p>
+                <p id="card-safety-rank" class="text-sm font-bold font-mono text-neon-green">S240</p>
+              </div>
+              <div>
+                <p class="text-[9px] text-gray-500 uppercase">Skill Rating</p>
+                <p id="card-skill-rating" class="text-sm font-bold font-mono text-neon-amber">Silver II</p>
+              </div>
+              <div>
+                <p class="text-[9px] text-gray-500 uppercase">Career Level</p>
+                <p id="card-level" class="text-sm font-bold font-mono text-white">Lvl 12</p>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] text-gray-400 pt-1">
+              <span>Steam ID: <strong id="card-steam-id" class="text-gray-200">Not linked</strong></span>
+              <span class="text-neon-cyan font-mono">AUTOMOBILISTA 2 HUB</span>
+            </div>
+          </div>
+
+          <button onclick="copyDriverLicense()" class="w-full py-2 rounded-xl bg-carbon-700 hover:bg-carbon-600 text-xs font-bold text-neon-cyan border border-neon-cyan/20 transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-copy"></i> Copy License Data
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- TAB 3: MULTIPLAYER RACE SCHEDULER & CALENDAR -->
+    <section id="tab-events" class="tab-content hidden space-y-6">
+      
+      <!-- Events Header -->
+      <div class="carbon-card rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
+            <i class="fa-solid fa-calendar-check text-neon-cyan"></i> Race Scheduler & Community Event Hub
+          </h2>
+          <p class="text-xs text-gray-400">Browse public dedicated servers when Steam returns them, and plan your own AMS2 sessions.</p>
+        </div>
+        <button onclick="openModal('create-event-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase tracking-wider hover:bg-cyan-300 transition-all flex items-center gap-2 shadow-lg shadow-neon-cyan/20">
+          <i class="fa-solid fa-calendar-plus text-sm"></i> Schedule Custom Event
+        </button>
+      </div>
+
+      <div class="carbon-card rounded-2xl p-6 space-y-4">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-tower-broadcast text-neon-cyan"></i> Public AMS2 Dedicated Servers
+            </h3>
+            <p class="text-xs text-gray-400">Steam's public dedicated-server query is not a complete list of peer-hosted or private sessions.</p>
+          </div>
+          <button onclick="loadPublicLobbies()" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 text-xs font-bold">
+            <i class="fa-solid fa-rotate"></i> Refresh server list
+          </button>
+        </div>
+        <p id="lobbies-status" class="text-xs text-gray-400">Choose refresh to query the public server list.</p>
+        <div id="public-lobbies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="carbon-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3 flex-1 min-w-[240px]">
+          <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
+          <input type="text" id="event-search-input" onkeyup="filterEvents()" placeholder="Search track, car class, or title..." class="bg-transparent text-sm text-white focus:outline-none w-full" />
+        </div>
+        <div class="flex items-center gap-3">
+          <select id="event-class-filter" onchange="filterEvents()" class="bg-carbon-800 text-xs text-gray-300 px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan">
+            <option value="ALL">All Car Classes</option>
+            <option value="GT3">GT3 Gen2</option>
+            <option value="LMDh">LMDh / Hypercars</option>
+            <option value="GT4">GT4</option>
+            <option value="F-Classic">Formula Classic / Retro</option>
+            <option value="Copa Truck">Copa Truck</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Scheduled Events List & Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="events-grid-container">
+        <!-- Event Cards Injected dynamically via JS -->
+      </div>
+
+    </section>
+
+
+    <!-- TAB 4: CREST2 & LIVE TELEMETRY RELAY -->
+    <section id="tab-live-telemetry" class="tab-content hidden space-y-6">
+      
+      <!-- Telemetry Relay Control Banner -->
+      <div class="carbon-card rounded-2xl p-6 space-y-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
+              <i class="fa-solid fa-satellite-dish text-neon-cyan"></i> CREST2 Telemetry Relay & Simulator
+            </h2>
+            <p class="text-xs text-gray-400">The simulator below is illustrative. A CREST2 response can be checked locally, but live field mapping is not configured in this web app.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="toggle-sim-telemetry-btn" onclick="toggleTelemetrySim()" class="px-4 py-2 rounded-xl bg-neon-amber text-black font-extrabold text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all flex items-center gap-2">
+              <i class="fa-solid fa-play"></i> Start Telemetry Simulator
+            </button>
+            <button id="connect-crest-btn" onclick="connectCREST2()" class="px-4 py-2 rounded-xl bg-carbon-700 hover:bg-carbon-600 text-white font-bold text-xs uppercase tracking-wider border border-gray-700 transition-all flex items-center gap-2">
+              <i class="fa-solid fa-plug"></i> Test local CREST2
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400">Endpoint:</span>
+            <span class="text-gray-200 bg-carbon-900 px-2 py-1 rounded border border-gray-800">http://localhost:8080/crest2/v1/session</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400">Status:</span>
+            <span id="telemetry-status-badge" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-bold">OFFLINE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Dashboard Gauge Display Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        
+        <!-- Speed & RPM Cluster -->
+        <div class="lg:col-span-2 carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-6 relative overflow-hidden">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Simulated Vehicle Telemetry</span>
+            <span id="live-car-name" class="text-xs font-mono text-neon-cyan font-bold">Porsche 911 GT3 R</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 items-center text-center">
+            <!-- Speed Gauge -->
+            <div class="space-y-1">
+              <span class="text-[10px] text-gray-400 uppercase tracking-widest">Speed (KM/H)</span>
+              <div id="telemetry-speed" class="text-5xl font-mono font-black text-white tracking-tighter">0</div>
+            </div>
+            <!-- Gear Gauge -->
+            <div class="space-y-1 border-l border-gray-800">
+              <span class="text-[10px] text-gray-400 uppercase tracking-widest">Current Gear</span>
+              <div id="telemetry-gear" class="text-5xl font-mono font-black text-neon-cyan">N</div>
+            </div>
+          </div>
+
+          <!-- RPM Bar -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs font-mono">
+              <span class="text-gray-400">RPM Gauge</span>
+              <span id="telemetry-rpm" class="text-neon-amber font-bold">0 / 8,800</span>
+            </div>
+            <div class="w-full h-4 bg-carbon-900 rounded-lg overflow-hidden p-0.5 border border-gray-800 flex gap-0.5">
+              <div id="rpm-bar-fill" class="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-red-600 rounded transition-all" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Throttle & Brake Pedals Inputs -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] text-gray-400">
+                <span>Throttle</span>
+                <span id="telemetry-throttle-val">0%</span>
+              </div>
+              <div class="w-full h-2 bg-carbon-900 rounded overflow-hidden">
+                <div id="telemetry-throttle-bar" class="h-full bg-neon-green" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] text-gray-400">
+                <span>Brake</span>
+                <span id="telemetry-brake-val">0%</span>
+              </div>
+              <div class="w-full h-2 bg-carbon-900 rounded overflow-hidden">
+                <div id="telemetry-brake-bar" class="h-full bg-neon-crimson" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Tire Temps Widget -->
+        <div class="carbon-card rounded-2xl p-6 space-y-4">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+            <span>Tire Temperatures (°C)</span>
+            <i class="fa-solid fa-temperature-three-quarters text-neon-amber"></i>
+          </h3>
+
+          <div class="grid grid-cols-2 gap-3 text-center font-mono">
+            <!-- Front Left -->
+            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
+              <p class="text-[9px] text-gray-500">Front Left</p>
+              <p id="tire-fl" class="text-lg font-bold text-neon-green">88°C</p>
+            </div>
+            <!-- Front Right -->
+            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
+              <p class="text-[9px] text-gray-500">Front Right</p>
+              <p id="tire-fr" class="text-lg font-bold text-neon-green">89°C</p>
+            </div>
+            <!-- Rear Left -->
+            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
+              <p class="text-[9px] text-gray-500">Rear Left</p>
+              <p id="tire-rl" class="text-lg font-bold text-neon-green">91°C</p>
+            </div>
+            <!-- Rear Right -->
+            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
+              <p class="text-[9px] text-gray-500">Rear Right</p>
+              <p id="tire-rr" class="text-lg font-bold text-neon-green">92°C</p>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-gray-400 text-center">Optimum Window: <strong class="text-white">85°C - 98°C</strong></p>
+        </div>
+
+        <!-- Live Sector / Lap Delta -->
+        <div class="carbon-card rounded-2xl p-6 space-y-4 flex flex-col justify-between">
+          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+            <span>Sample Timing & Laps</span>
+            <i class="fa-solid fa-stopwatch text-neon-cyan"></i>
+          </h3>
+
+          <div class="space-y-2 font-mono">
+            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
+              <span class="text-gray-400">Current Lap:</span>
+              <span id="telemetry-lap-time" class="text-neon-cyan font-bold">1:42.318</span>
+            </div>
+            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
+              <span class="text-gray-400">Best Lap:</span>
+              <span id="telemetry-best-lap" class="text-neon-amber font-bold">1:41.002</span>
+            </div>
+            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
+              <span class="text-gray-400">Delta:</span>
+              <span id="telemetry-delta" class="text-neon-green font-bold">-0.245s</span>
+            </div>
+          </div>
+
+          <div class="text-[10px] text-gray-500 text-center">Track: Interlagos Grand Prix</div>
+        </div>
+
+      </div>
+
+      <!-- Steam Account and Cloud Sync -->
+      <div class="carbon-card rounded-2xl p-6 space-y-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-brands fa-steam text-neon-cyan"></i> Steam Account & Cloud Sync
+        </h3>
+        <p id="account-status" class="text-xs text-gray-400">Not signed in. Sign in with Steam to sync your career between devices.</p>
+        <div id="account-profile" class="hidden flex items-center gap-3 text-sm text-white">
+          <img id="steam-avatar" alt="" class="w-10 h-10 rounded-full border border-neon-cyan/40" />
+          <div>
+            <a id="steam-profile-link" class="font-bold text-neon-cyan" target="_blank" rel="noreferrer"></a>
+            <p id="steam-id-label" class="text-xs text-gray-400 font-mono"></p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <a id="steam-login-panel-link" href="/api/auth" class="px-4 py-2 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase tracking-wider">
+            <i class="fa-brands fa-steam"></i> Sign in with Steam
+          </a>
+          <button id="steam-logout-panel-button" onclick="signOut()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">Sign out</button>
+          <button id="refresh-steam-button" onclick="refreshSteamData()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs">
+            Refresh Steam profile and game stats
+          </button>
+        </div>
+        <p id="steam-stats-status" class="text-xs text-gray-400">Steam sign-in verifies your account; it does not itself expose native AMS2 multiplayer ratings.</p>
+        <div id="steam-game-stats" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- MODALS SECTION -->
+
+  <!-- Modal 1: Log Completed Race -->
+  <div id="log-race-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-flag-checkered text-neon-cyan"></i> Log AMS2 Race Result
+        </h3>
+        <button onclick="closeModal('log-race-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form id="log-race-form" onsubmit="handleLogRaceSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-gray-300 font-semibold mb-1">Track / Circuit Name</label>
+          <input type="text" id="modal-track-input" required placeholder="e.g. Spa-Francorchamps" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Vehicle Class</label>
+            <select id="modal-class-input" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan">
+              <option value="GT3 Gen2">GT3 Gen2</option>
+              <option value="LMDh / Hypercar">LMDh / Hypercar</option>
+              <option value="GT4">GT4</option>
+              <option value="Formula Classic">Formula Classic</option>
+              <option value="Copa Truck">Copa Truck</option>
+              <option value="Kart 125cc">Kart 125cc</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Finish Position</label>
+            <input type="number" id="modal-pos-input" min="1" max="32" required value="1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Incident Points (0 = Clean)</label>
+            <input type="number" id="modal-incidents-input" min="0" max="50" required value="0" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Lobby Driver Count</label>
+            <input type="number" id="modal-drivers-input" min="2" max="36" required value="16" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-3">
+          <button type="button" onclick="closeModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Calculate & Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Edit Safety & Skill Rating Sliders -->
+  <div id="rating-override-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-md w-full p-6 space-y-5 border border-neon-cyan/30">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-neon-cyan"></i> Update Driver Rating Sliders
+        </h3>
+        <button onclick="closeModal('rating-override-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="space-y-5 text-xs">
+        <div class="space-y-2">
+          <div class="flex justify-between font-bold">
+            <span class="text-gray-300">Career Safety Score (app-tracked):</span>
+            <span id="slider-sr-val" class="text-neon-green font-mono">240</span>
+          </div>
+          <input type="range" id="slider-sr-input" min="100" max="300" value="240" oninput="document.getElementById('slider-sr-val').innerText = this.value" class="w-full accent-neon-green bg-carbon-800 rounded-lg cursor-pointer" />
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex justify-between font-bold">
+            <span class="text-gray-300">Career Skill Score (app-tracked):</span>
+            <span id="slider-skill-val" class="text-neon-amber font-mono">1680</span>
+          </div>
+          <input type="range" id="slider-skill-input" min="1000" max="3000" step="10" value="1680" oninput="document.getElementById('slider-skill-val').innerText = this.value" class="w-full accent-neon-amber bg-carbon-800 rounded-lg cursor-pointer" />
+        </div>
+
+        <div class="pt-2 flex justify-end gap-3">
+          <button onclick="closeModal('rating-override-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
+          <button onclick="saveRatingOverrides()" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Apply Ratings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Create Custom Race Event -->
+  <div id="create-event-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-calendar-plus text-neon-cyan"></i> Schedule AMS2 Multiplayer Race
+        </h3>
+        <button onclick="closeModal('create-event-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <form id="create-event-form" onsubmit="handleCreateEventSubmit(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-gray-300 font-semibold mb-1">Event Title</label>
+          <input type="text" id="event-title-input" required placeholder="e.g. Wednesday GT3 Sprint Championship" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Track</label>
+            <input type="text" id="event-track-input" required placeholder="e.g. Brands Hatch GP" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Car Class</label>
+            <input type="text" id="event-class-input" required placeholder="e.g. GT3 Gen2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Duration (Mins)</label>
+            <input type="number" id="event-duration-input" min="5" max="1440" value="45" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Date & Time</label>
+            <input type="datetime-local" id="event-time-input" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-3">
+          <button type="button" onclick="closeModal('create-event-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Schedule Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+
+  <!-- MAIN JAVASCRIPT LOGIC -->
+  <script>
+    // ----------------------------------------------------
+    // INITIAL APP STATE & LOCALSTORAGE PERSISTENCE
+    // ----------------------------------------------------
+    const DEFAULT_STATE = {
+      driver: {
+        name: "My Driver",
+        title: "Career Starter",
+        steamId: "",
+        level: 1,
+        xp: 0,
+        nextXp: 500,
+        safetyRating: 100,
+        skillRating: 1000,
+      },
+      stats: {
+        races: 0,
+        wins: 0,
+        podiums: 0,
+        cleanRaces: 0,
+        totalIncidents: 0,
+      },
+      racesHistory: [],
+      events: []
+    };
+
+    function cloneDefaultState() {
+      return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+
+    function readLocalState() {
+      try {
+        const saved = localStorage.getItem('AMS2_HUB_STATE');
+        return saved ? JSON.parse(saved) : cloneDefaultState();
+      } catch (error) {
+        console.error("Could not read saved local app data:", error);
+        return cloneDefaultState();
+      }
+    }
+
+    let appState = readLocalState();
+    let currentUser = null;
+    let cloudSaveTimer = null;
+    let cloudSaveVersion = 0;
+    let cloudSavedVersion = 0;
+    let cloudSavePromise = null;
+
+    function saveState() {
+      renderApp();
+      try {
+        localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
+        if (currentUser) localStorage.setItem('AMS2_HUB_ACCOUNT_ID', currentUser.steamId);
+      } catch (error) {
+        console.error("Could not save local app data:", error);
+        showToast("Could not save a local backup on this device.", "error");
+      }
+      if (currentUser) {
+        cloudSaveVersion += 1;
+        document.getElementById('account-status').innerText = "Saving your changes to your Steam account...";
+        clearTimeout(cloudSaveTimer);
+        cloudSaveTimer = setTimeout(saveCloudState, 500);
+      }
+    }
+
+    async function saveCloudState() {
+      if (!currentUser || cloudSavePromise) return;
+      cloudSavePromise = (async () => {
+        while (cloudSavedVersion < cloudSaveVersion && currentUser) {
+          const version = cloudSaveVersion;
+          const response = await fetch('/api/data', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appState)
+          });
+          const payload = await parseApiResponse(response);
+          if (!response.ok) throw new Error(payload.message || "Cloud save failed.");
+          cloudSavedVersion = version;
+        }
+      })();
+
+      try {
+        await cloudSavePromise;
+        if (currentUser && cloudSavedVersion === cloudSaveVersion) {
+          document.getElementById('account-status').innerText = "Signed in. Your career data is synced to the cloud.";
+        }
+      } catch (error) {
+        console.error("Cloud save failed:", error);
+        document.getElementById('account-status').innerText = `Cloud sync failed: ${error.message}`;
+        showToast(`Cloud sync failed: ${error.message}`, "error");
+      } finally {
+        cloudSavePromise = null;
+      }
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    async function parseApiResponse(response) {
+      const body = await response.text();
+      try {
+        return JSON.parse(body);
+      } catch {
+        throw new Error(`The server returned HTTP ${response.status}, not a JSON API response. Deploy the api/ routes with the site.`);
+      }
+    }
+
+    // ----------------------------------------------------
+    // HELPER FUNCTIONS & RATING DERIVATIONS
+    // ----------------------------------------------------
+    function getSafetyRankLabel(sr) {
+      if (sr >= 280) return "S-Grade (Elite)";
+      if (sr >= 240) return "S-Grade";
+      if (sr >= 200) return "A-Grade";
+      if (sr >= 160) return "B-Grade";
+      if (sr >= 120) return "C-Grade";
+      return "D-Grade";
+    }
+
+    function getSkillGradeLabel(elo) {
+      if (elo >= 2500) return "Alien / Diamond";
+      if (elo >= 2200) return "Gold III";
+      if (elo >= 2000) return "Gold I";
+      if (elo >= 1800) return "Silver III";
+      if (elo >= 1600) return "Silver II";
+      if (elo >= 1500) return "Silver I";
+      if (elo >= 1300) return "Bronze III";
+      return "Bronze I";
+    }
+
+    // ----------------------------------------------------
+    // TAB NAVIGATION CONTROLLER
+    // ----------------------------------------------------
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-neon-cyan', 'bg-carbon-700/80', 'border', 'border-neon-cyan/20');
+        btn.classList.add('text-gray-400');
+      });
+
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      if (activeTab) activeTab.classList.remove('hidden');
+
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('text-neon-cyan', 'bg-carbon-700/80', 'border', 'border-neon-cyan/20');
+        activeBtn.classList.remove('text-gray-400');
+      }
+    }
+
+    // ----------------------------------------------------
+    // MODAL CONTROLLERS & TOASTS
+    // ----------------------------------------------------
+    function openModal(modalId) {
+      if (modalId === 'rating-override-modal') {
+        document.getElementById('slider-sr-input').value = appState.driver.safetyRating;
+        document.getElementById('slider-sr-val').innerText = appState.driver.safetyRating;
+        document.getElementById('slider-skill-input').value = appState.driver.skillRating;
+        document.getElementById('slider-skill-val').innerText = appState.driver.skillRating;
+      }
+      document.getElementById(modalId)?.classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId)?.classList.add('hidden');
+    }
+
+    function showToast(msg, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const isError = type === "error";
+      toast.className = `px-4 py-3 rounded-xl carbon-card text-xs font-bold text-white shadow-xl flex items-center gap-2 border ${isError ? 'border-neon-crimson/50' : 'border-neon-cyan/30'} pointer-events-auto animate-bounce`;
+      const icon = document.createElement('i');
+      icon.className = `fa-solid ${isError ? 'fa-circle-exclamation text-neon-crimson' : 'fa-circle-info text-neon-cyan'}`;
+      const message = document.createElement('span');
+      message.textContent = msg;
+      toast.append(icon, message);
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    // ----------------------------------------------------
+    // ----------------------------------------------------
+    const CAREER_TIERS = [
+      { id: 1, name: "Tier 1: Karting & Club Racing", class: "Kart 125cc / Uno", minLevel: 1, reqSr: 100, unlocked: true },
+      { id: 2, name: "Tier 2: GT4 & Formula Junior", class: "GT4 / F-Trainer", minLevel: 5, reqSr: 160, unlocked: true },
+      { id: 3, name: "Tier 3: GT3 & Endurance Sprint", class: "GT3 Gen2 / P3", minLevel: 10, reqSr: 200, unlocked: true },
+      { id: 4, name: "Tier 4: Formula Classic & LMP2", class: "F-Classic / DPI", minLevel: 15, reqSr: 240, unlocked: false },
+      { id: 5, name: "Tier 5: Formula 1 & LMDh Hypercars", class: "F-Ultimate / LMDh", minLevel: 20, reqSr: 270, unlocked: false }
+    ];
+
+    function renderCareerTiers() {
+      const container = document.getElementById('career-tiers-container');
+      if (!container) return;
+
+      container.innerHTML = CAREER_TIERS.map(tier => {
+        const isUnlocked = appState.driver.level >= tier.minLevel && appState.driver.safetyRating >= tier.reqSr;
+        return `
+          <div class="carbon-card rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${isUnlocked ? 'border-l-4 border-l-neon-cyan' : 'opacity-60 border-l-4 border-l-gray-700'}">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <h4 class="text-lg font-extrabold text-white">${tier.name}</h4>
+                ${isUnlocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-neon-green/20 text-neon-green font-bold">UNLOCKED</span>' : '<span class="text-[10px] px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-bold"><i class="fa-solid fa-lock"></i> LOCKED</span>'}
+              </div>
+              <p class="text-xs text-gray-400">Class Focus: <strong class="text-gray-200">${tier.class}</strong></p>
+            </div>
+            <div class="flex items-center gap-4 text-xs font-mono">
+              <span class="text-gray-400">Req: <strong class="${appState.driver.level >= tier.minLevel ? 'text-neon-cyan' : 'text-neon-crimson'}">Lvl ${tier.minLevel}</strong> & <strong class="${appState.driver.safetyRating >= tier.reqSr ? 'text-neon-green' : 'text-neon-crimson'}">SR ${tier.reqSr}</strong></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTrophies() {
+      const container = document.getElementById('trophy-grid-container');
+      if (!container) return;
+
+      const trophies = [
+        { title: "First Podium", icon: "fa-award", color: "text-blue-400", unlocked: appState.stats.podiums > 0 },
+        { title: "Clean Operator", icon: "fa-shield-cat", color: "text-neon-green", unlocked: appState.stats.cleanRaces >= 10 },
+        { title: "Apex Predator", icon: "fa-trophy", color: "text-neon-amber", unlocked: appState.stats.wins >= 5 },
+        { title: "Iron Man", icon: "fa-stopwatch", color: "text-purple-400", unlocked: appState.stats.races >= 25 },
+        { title: "Safety Virtuoso", icon: "fa-certificate", color: "text-neon-cyan", unlocked: appState.driver.safetyRating >= 240 }
+      ];
+
+      container.innerHTML = trophies.map(t => `
+        <div class="carbon-card p-3 rounded-xl text-center space-y-1.5 ${t.unlocked ? '' : 'opacity-30'}">
+          <i class="fa-solid ${t.icon} text-2xl ${t.color}"></i>
+          <p class="text-[11px] font-bold text-white truncate">${t.title}</p>
+          <span class="text-[9px] font-mono text-gray-400">${t.unlocked ? 'Unlocked' : 'Locked'}</span>
+        </div>
+      `).join('');
+    }
+
+    // ----------------------------------------------------
+    // ----------------------------------------------------
+    function renderEvents() {
+      const container = document.getElementById('events-grid-container');
+      if (!container) return;
+
+      const searchTerm = (document.getElementById('event-search-input')?.value || '').toLowerCase();
+      const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
+
+      const filtered = appState.events.filter(ev => {
+        const matchesSearch = ev.title.toLowerCase().includes(searchTerm) || ev.track.toLowerCase().includes(searchTerm);
+        const matchesClass = filterClass === 'ALL' || ev.carClass.includes(filterClass);
+        return matchesSearch && matchesClass;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-sm text-gray-400 col-span-full">${appState.events.length ? 'No events match these filters.' : 'No scheduled events yet. Create an event to add it to your career calendar.'}</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(ev => `
+        <div class="carbon-card rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+          <div class="space-y-2">
+            <div class="flex justify-between items-start">
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">${escapeHTML(ev.carClass)}</span>
+              <span class="text-[10px] text-gray-400 font-mono"><i class="fa-solid fa-clock"></i> ${escapeHTML(ev.duration)}</span>
+            </div>
+            <h4 class="text-base font-bold text-white">${escapeHTML(ev.title)}</h4>
+            <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-location-dot text-neon-crimson"></i> ${escapeHTML(ev.track)}</p>
+          </div>
+
+          <div class="space-y-3 pt-2 border-t border-gray-800">
+            <div class="flex justify-between text-[11px] text-gray-400 font-mono">
+              <span>Start Time:</span>
+              <span class="text-white">${escapeHTML(new Date(ev.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span>
+            </div>
+
+            <button onclick="toggleScheduleEvent(${Number.isSafeInteger(ev.id) ? ev.id : 0})" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${ev.scheduled ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
+              <i class="fa-solid ${ev.scheduled ? 'fa-check' : 'fa-calendar-plus'}"></i>
+              ${ev.scheduled ? 'Scheduled on Calendar' : 'Schedule Event'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterEvents() {
+      renderEvents();
+    }
+
+    function toggleScheduleEvent(eventId) {
+      const ev = appState.events.find(e => e.id === eventId);
+      if (ev) {
+        ev.scheduled = !ev.scheduled;
+        saveState();
+        showToast(ev.scheduled ? `Scheduled "${ev.title}" to calendar!` : `Removed from calendar.`);
+      }
+    }
+
+    // ----------------------------------------------------
+    // LOG RACE SUBMISSION & RATING CALCULATOR
+    // ----------------------------------------------------
+    function handleLogRaceSubmit(e) {
+      e.preventDefault();
+      const track = document.getElementById('modal-track-input').value;
+      const carClass = document.getElementById('modal-class-input').value;
+      const pos = parseInt(document.getElementById('modal-pos-input').value);
+      const inc = parseInt(document.getElementById('modal-incidents-input').value);
+
+      // Calculations
+      const isWin = pos === 1;
+      const isPodium = pos <= 3;
+      const isClean = inc === 0;
+
+      // XP Delta
+      let xpEarned = Math.max(50, 200 - (pos * 10)) + (isClean ? 50 : 0) + (isWin ? 100 : 0);
+      let ratingDeltaNum = (pos <= 3 ? (4 - pos) * 10 : -((pos - 3) * 4)) + (isClean ? 5 : -inc);
+
+      appState.stats.races += 1;
+      if (isWin) appState.stats.wins += 1;
+      if (isPodium) appState.stats.podiums += 1;
+      if (isClean) appState.stats.cleanRaces += 1;
+      appState.stats.totalIncidents += inc;
+
+      // Apply XP
+      appState.driver.xp += xpEarned;
+      if (appState.driver.xp >= appState.driver.nextXp) {
+        appState.driver.level += 1;
+        appState.driver.xp -= appState.driver.nextXp;
+        appState.driver.nextXp = Math.floor(appState.driver.nextXp * 1.25);
+        showToast(`LEVEL UP! You are now Level ${appState.driver.level}`, "success");
+      }
+
+      // Apply Ratings
+      appState.driver.safetyRating = Math.min(300, Math.max(100, appState.driver.safetyRating + (isClean ? 4 : -inc)));
+      appState.driver.skillRating = Math.min(3000, Math.max(1000, appState.driver.skillRating + ratingDeltaNum));
+
+      // Add to history
+      appState.racesHistory.unshift({
+        id: Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        track,
+        carClass,
+        position: pos,
+        incidents: inc,
+        xp: xpEarned,
+        ratingDelta: (ratingDeltaNum >= 0 ? `+${ratingDeltaNum}` : `${ratingDeltaNum}`)
+      });
+      appState.racesHistory = appState.racesHistory.slice(0, 1000);
+
+      closeModal('log-race-modal');
+      saveState();
+      showToast(`Race result logged! +${xpEarned} XP Earned.`);
+    }
+
+    // ----------------------------------------------------
+    // ----------------------------------------------------
+    let telemetrySimInterval = null;
+    let isSimulating = false;
+
+    function toggleTelemetrySim() {
+      const btn = document.getElementById('toggle-sim-telemetry-btn');
+      const badge = document.getElementById('telemetry-status-badge');
+
+      if (isSimulating) {
+        clearInterval(telemetrySimInterval);
+        isSimulating = false;
+        btn.innerHTML = `<i class="fa-solid fa-play"></i> Start Telemetry Simulator`;
+        btn.className = "px-4 py-2 rounded-xl bg-neon-amber text-black font-extrabold text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all flex items-center gap-2";
+        badge.innerText = "OFFLINE";
+        badge.className = "px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-bold";
+      } else {
+        isSimulating = true;
+        btn.innerHTML = `<i class="fa-solid fa-stop"></i> Stop Telemetry Simulator`;
+        btn.className = "px-4 py-2 rounded-xl bg-neon-crimson text-white font-extrabold text-xs uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2";
+        badge.innerText = "SIMULATOR LIVE";
+        badge.className = "px-2 py-0.5 rounded bg-neon-green/20 text-neon-green font-bold animate-pulse";
+
+        telemetrySimInterval = setInterval(updateTelemetryFrame, 200);
+      }
+    }
+
+    function updateTelemetryFrame() {
+      const speed = Math.floor(180 + Math.random() * 70);
+      const gear = Math.floor(3 + Math.random() * 4);
+      const rpm = Math.floor(6000 + Math.random() * 2500);
+      const throttle = Math.floor(70 + Math.random() * 30);
+      const brake = Math.random() > 0.8 ? Math.floor(Math.random() * 80) : 0;
+
+      document.getElementById('telemetry-speed').innerText = speed;
+      document.getElementById('telemetry-gear').innerText = gear;
+      document.getElementById('telemetry-rpm').innerText = `${rpm.toLocaleString()} / 8,800`;
+      document.getElementById('rpm-bar-fill').style.width = `${(rpm / 8800) * 100}%`;
+
+      document.getElementById('telemetry-throttle-val').innerText = `${throttle}%`;
+      document.getElementById('telemetry-throttle-bar').style.width = `${throttle}%`;
+
+      document.getElementById('telemetry-brake-val').innerText = `${brake}%`;
+      document.getElementById('telemetry-brake-bar').style.width = `${brake}%`;
+
+      // Random tire fluctuation
+      document.getElementById('tire-fl').innerText = `${Math.floor(88 + Math.random() * 4)}°C`;
+      document.getElementById('tire-fr').innerText = `${Math.floor(89 + Math.random() * 4)}°C`;
+      document.getElementById('tire-rl').innerText = `${Math.floor(90 + Math.random() * 4)}°C`;
+      document.getElementById('tire-rr').innerText = `${Math.floor(91 + Math.random() * 4)}°C`;
+    }
+
+    async function connectCREST2() {
+    showToast("Checking the local CREST2 endpoint...");
+    try {
+      const response = await fetch("http://localhost:8080/crest2/v1/session", {
+        signal: AbortSignal.timeout(4000)
+      });
+      if (!response.ok) throw new Error(`Endpoint returned HTTP ${response.status}.`);
+      await response.json();
+      showToast("CREST2 responded. Live telemetry field mapping is not configured.", "error");
+    } catch (error) {
+      console.error("CREST2 connection check failed:", error);
+      showToast("CREST2 is unavailable to this browser. Use the simulator or configure a compatible local relay.", "error");
+    }
+    }
+
+    // ----------------------------------------------------
+    // ----------------------------------------------------
+    function renderApp() {
+      // Driver profile elements
+      document.getElementById('driver-name-display').innerText = appState.driver.name;
+      document.getElementById('driver-title-display').innerText = appState.driver.title;
+      document.getElementById('card-driver-name').innerText = appState.driver.name;
+      document.getElementById('card-steam-id').innerText = appState.driver.steamId || "Not linked";
+      document.getElementById('safety-badge-pill').innerText = `S${appState.driver.safetyRating}`;
+      document.getElementById('skill-grade-display').innerText = getSkillGradeLabel(appState.driver.skillRating);
+
+      // Level & XP
+      document.getElementById('driver-level-val').innerText = appState.driver.level;
+      document.getElementById('card-level').innerText = `Lvl ${appState.driver.level}`;
+      document.getElementById('driver-xp-val').innerText = appState.driver.xp.toLocaleString();
+      document.getElementById('driver-next-xp-val').innerText = appState.driver.nextXp.toLocaleString();
+      const xpPct = Math.min(100, Math.floor((appState.driver.xp / appState.driver.nextXp) * 100));
+      document.getElementById('driver-xp-bar').style.width = `${xpPct}%`;
+      document.getElementById('xp-remaining-display').innerText = `${(appState.driver.nextXp - appState.driver.xp).toLocaleString()} XP needed`;
+
+      // Stats Grid
+      document.getElementById('stat-races').innerText = appState.stats.races;
+      document.getElementById('stat-wins').innerText = appState.stats.wins;
+      document.getElementById('stat-podiums').innerText = appState.stats.podiums;
+      const winPct = appState.stats.races > 0 ? ((appState.stats.wins / appState.stats.races) * 100).toFixed(1) : 0;
+      const podPct = appState.stats.races > 0 ? ((appState.stats.podiums / appState.stats.races) * 100).toFixed(1) : 0;
+      const cleanPct = appState.stats.races > 0 ? ((appState.stats.cleanRaces / appState.stats.races) * 100).toFixed(1) : 0;
+      const avgInc = appState.stats.races > 0 ? (appState.stats.totalIncidents / appState.stats.races).toFixed(1) : 0;
+
+      document.getElementById('stat-win-rate').innerText = `${winPct}%`;
+      document.getElementById('stat-podium-rate').innerText = `${podPct}%`;
+      document.getElementById('stat-clean-rate').innerText = `${cleanPct}%`;
+      document.getElementById('stat-avg-incidents').innerText = avgInc;
+
+      // Ratings
+      document.getElementById('safety-score-num').innerText = appState.driver.safetyRating;
+      document.getElementById('safety-bar').style.width = `${(appState.driver.safetyRating / 300) * 100}%`;
+      document.getElementById('safety-rank-text').innerText = getSafetyRankLabel(appState.driver.safetyRating);
+      document.getElementById('card-safety-rank').innerText = `S${appState.driver.safetyRating}`;
+
+      document.getElementById('skill-score-num').innerText = appState.driver.skillRating.toLocaleString();
+      document.getElementById('skill-bar').style.width = `${Math.min(100, (appState.driver.skillRating / 3000) * 100)}%`;
+      document.getElementById('skill-rank-text').innerText = getSkillGradeLabel(appState.driver.skillRating);
+      document.getElementById('card-skill-rating').innerText = getSkillGradeLabel(appState.driver.skillRating);
+
+      // Recent Activity Table
+      const tbody = document.getElementById('recent-races-tbody');
+      if (tbody) {
+        tbody.innerHTML = appState.racesHistory.slice(0, 5).map(r => `
+          <tr class="hover:bg-carbon-800/40 transition-all">
+            <td class="p-3 font-mono text-gray-400">${escapeHTML(r.date)}</td>
+            <td class="p-3 font-bold text-white">${escapeHTML(r.track)}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded bg-carbon-800 border border-gray-700 text-neon-cyan">${escapeHTML(r.carClass)}</span></td>
+            <td class="p-3 font-bold font-mono ${r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">P${r.position}</td>
+            <td class="p-3 font-mono ${r.incidents === 0 ? 'text-neon-green' : 'text-neon-crimson'}">${r.incidents}x</td>
+            <td class="p-3 font-mono text-gray-300">+${r.xp} XP</td>
+            <td class="p-3 font-mono ${String(r.ratingDelta).startsWith('+') ? 'text-neon-green' : 'text-neon-crimson'}">${escapeHTML(r.ratingDelta)}</td>
+          </tr>
+        `).join('');
+        if (!appState.racesHistory.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Log your first race to start building your career record.</td></tr>';
+        }
+      }
+
+      // Render Subcomponents
+      renderCareerTiers();
+      renderTrophies();
+      renderEvents();
+      renderRatingMilestones();
+    }
+
+    function renderRatingMilestones() {
+      const safetyTargets = [120, 160, 200, 240, 280, 300];
+      const skillTargets = [1300, 1500, 1600, 1800, 2000, 2200, 2500, 3000];
+      const safetyTarget = safetyTargets.find(target => target > appState.driver.safetyRating);
+      const skillTarget = skillTargets.find(target => target > appState.driver.skillRating);
+      document.getElementById('safety-calculator-hint').textContent = safetyTarget
+        ? `Need ${safetyTarget - appState.driver.safetyRating} app-tracked SR to reach the next safety milestone (${getSafetyRankLabel(safetyTarget)}).`
+        : "Top app-tracked safety milestone reached.";
+      document.getElementById('skill-calculator-hint').textContent = skillTarget
+        ? `Need ${(skillTarget - appState.driver.skillRating).toLocaleString()} app-tracked points to reach ${getSkillGradeLabel(skillTarget)}.`
+        : "Top app-tracked skill milestone reached.";
+
+      const activeTier = [...CAREER_TIERS].reverse().find(tier =>
+        appState.driver.level >= tier.minLevel && appState.driver.safetyRating >= tier.reqSr
+      ) || CAREER_TIERS[0];
+      document.getElementById('career-current-tier-text').textContent = activeTier.name.replace(/^Tier \d+: /, "");
+    }
+
+    function updateAccountControls() {
+      const signedIn = Boolean(currentUser);
+      document.getElementById('steam-login-link').classList.toggle('hidden', signedIn);
+      document.getElementById('steam-login-mobile').classList.toggle('hidden', signedIn);
+      document.getElementById('steam-login-panel-link').classList.toggle('hidden', signedIn);
+      document.getElementById('steam-logout-button').classList.toggle('hidden', !signedIn);
+      document.getElementById('steam-logout-mobile').classList.toggle('hidden', !signedIn);
+      document.getElementById('steam-logout-panel-button').classList.toggle('hidden', !signedIn);
+      document.getElementById('refresh-steam-button').classList.toggle('hidden', !signedIn);
+      document.getElementById('account-profile').classList.toggle('hidden', !signedIn);
+
+      if (signedIn) {
+        document.getElementById('account-status').textContent = cloudSavedVersion < cloudSaveVersion
+          ? `Signed in as Steam account ${currentUser.steamId}. Cloud sync is pending; check your connection.`
+          : `Signed in as Steam account ${currentUser.steamId}. Your app data syncs across devices.`;
+        document.getElementById('steam-id-label').textContent = `SteamID64: ${currentUser.steamId}`;
+      } else {
+        document.getElementById('account-status').textContent = "Not signed in. Sign in with Steam to sync your career between devices.";
+        document.getElementById('steam-profile-link').textContent = "";
+        document.getElementById('steam-avatar').removeAttribute('src');
+      }
+    }
+
+    async function loadAccount() {
+      const params = new URLSearchParams(window.location.search);
+      const loginResult = params.get('steamLogin');
+      if (loginResult) {
+        history.replaceState(null, "", window.location.pathname);
+        if (loginResult === "connected") showToast("Steam account verified.");
+        else showToast(`Steam sign-in did not complete (${loginResult.replaceAll('_', ' ')}).`, "error");
+      }
+
+      if (window.location.protocol === 'file:') {
+        updateAccountControls();
+        document.getElementById('account-status').textContent = "Steam sign-in and cloud sync require the deployed HTTPS app. You can still use this file's local demo.";
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/data', { credentials: 'same-origin' });
+        if (response.status === 401) {
+          if (localStorage.getItem('AMS2_HUB_ACCOUNT_ID')) {
+            localStorage.removeItem('AMS2_HUB_STATE');
+            localStorage.removeItem('AMS2_HUB_ACCOUNT_ID');
+            appState = cloneDefaultState();
+            renderApp();
+          }
+          updateAccountControls();
+          return;
+        }
+        const payload = await parseApiResponse(response);
+        if (!response.ok) throw new Error(payload.message || "Account data could not be loaded.");
+
+        currentUser = { steamId: payload.steamId };
+        if (payload.state) {
+          appState = payload.state;
+          appState.driver.steamId = payload.steamId;
+          localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
+          localStorage.setItem('AMS2_HUB_ACCOUNT_ID', payload.steamId);
+          cloudSavedVersion = cloudSaveVersion;
+        } else {
+          const previousAccountId = localStorage.getItem('AMS2_HUB_ACCOUNT_ID');
+          if (previousAccountId && previousAccountId !== payload.steamId) {
+            appState = cloneDefaultState();
+            showToast("Local data from another Steam account was not copied to this account.", "error");
+          }
+          appState.driver.steamId = payload.steamId;
+          localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
+          localStorage.setItem('AMS2_HUB_ACCOUNT_ID', payload.steamId);
+          cloudSaveVersion += 1;
+          await saveCloudState();
+        }
+        updateAccountControls();
+        renderApp();
+        refreshSteamData(false);
+      } catch (error) {
+        console.error("Account sync could not be loaded:", error);
+        document.getElementById('account-status').textContent = `Account sync unavailable: ${error.message}`;
+        showToast(`Account sync unavailable: ${error.message}`, "error");
+      }
+    }
+
+    async function refreshSteamData(showResult = true) {
+      if (!currentUser) return;
+      const status = document.getElementById('steam-stats-status');
+      status.textContent = "Checking Steam profile and published AMS2 game statistics...";
+      try {
+        const response = await fetch('/api/profile', { credentials: 'same-origin' });
+        const payload = await parseApiResponse(response);
+        if (!response.ok) throw new Error(payload.message || "Steam data could not be loaded.");
+
+        currentUser.steamId = payload.steamId;
+        if (payload.profile) {
+          const profileLink = document.getElementById('steam-profile-link');
+          profileLink.textContent = payload.profile.name;
+          profileLink.href = payload.profile.profileUrl;
+          document.getElementById('steam-avatar').src = payload.profile.avatar;
+          appState.driver.name = payload.profile.name;
+          appState.driver.steamId = payload.steamId;
+          saveState();
+        } else {
+          document.getElementById('steam-profile-link').textContent = `Steam ${payload.steamId}`;
+          document.getElementById('steam-profile-link').removeAttribute('href');
+        }
+        document.getElementById('steam-id-label').textContent = `SteamID64: ${payload.steamId}`;
+        status.textContent = payload.message;
+        renderSteamGameStats(payload.gameStats);
+        if (showResult) showToast("Steam data refreshed.");
+      } catch (error) {
+        console.error("Steam profile refresh failed:", error);
+        status.textContent = `Steam data unavailable: ${error.message}`;
+        if (showResult) showToast(`Steam data unavailable: ${error.message}`, "error");
+      }
+    }
+
+    function renderSteamGameStats(gameStats) {
+      const container = document.getElementById('steam-game-stats');
+      container.replaceChildren();
+      if (!gameStats) return;
+      const rows = [
+        ...gameStats.stats.slice(0, 20).map(item => [`Stat: ${item.name}`, item.value]),
+        ...gameStats.achievements.slice(0, 20).map(item => [`Achievement: ${item.name}`, item.achieved ? 'Unlocked' : 'Locked'])
+      ];
+      if (!rows.length) return;
+      for (const [label, value] of rows) {
+        const card = document.createElement('div');
+        card.className = "carbon-card rounded-xl p-3 text-xs flex justify-between gap-3";
+        const name = document.createElement('span');
+        name.className = "text-gray-400 break-all";
+        name.textContent = label;
+        const result = document.createElement('strong');
+        result.className = "text-white";
+        result.textContent = String(value);
+        card.append(name, result);
+        container.appendChild(card);
+      }
+    }
+
+    async function signOut() {
+      try {
+        clearTimeout(cloudSaveTimer);
+        if (cloudSavedVersion < cloudSaveVersion) {
+          await saveCloudState();
+          if (cloudSavedVersion < cloudSaveVersion) {
+            throw new Error("Pending changes could not be synced. Check your connection and try again.");
+          }
+        }
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'same-origin'
+        });
+        const payload = await parseApiResponse(response);
+        if (!response.ok) throw new Error(payload.message || "Sign-out failed.");
+        currentUser = null;
+        clearTimeout(cloudSaveTimer);
+        localStorage.removeItem('AMS2_HUB_STATE');
+        localStorage.removeItem('AMS2_HUB_ACCOUNT_ID');
+        appState = cloneDefaultState();
+        document.getElementById('steam-game-stats').replaceChildren();
+        document.getElementById('steam-stats-status').textContent = "Steam sign-in verifies your account; it does not itself expose native AMS2 multiplayer ratings.";
+        updateAccountControls();
+        renderApp();
+        showToast("Signed out. Cloud data remains linked to your Steam account.");
+      } catch (error) {
+        console.error("Sign-out failed:", error);
+        showToast(`Sign-out failed: ${error.message}`, "error");
+      }
+    }
+
+    async function loadPublicLobbies() {
+      const status = document.getElementById('lobbies-status');
+      const container = document.getElementById('public-lobbies-grid');
+      status.textContent = "Querying Steam's public dedicated-server list...";
+      container.replaceChildren();
+      try {
+        const response = await fetch('/api/lobbies', { credentials: 'same-origin' });
+        const payload = await parseApiResponse(response);
+        if (!response.ok) throw new Error(payload.message || "Server list could not be loaded.");
+        status.textContent = `${payload.coverage} Refreshed ${new Date(payload.fetchedAt).toLocaleTimeString()}.`;
+        if (!payload.lobbies.length) {
+          container.innerHTML = '<p class="text-sm text-gray-400">Steam returned no public dedicated servers for this query.</p>';
+          return;
+        }
+        for (const lobby of payload.lobbies) {
+          const card = document.createElement('article');
+          card.className = "carbon-card rounded-xl p-4 space-y-2";
+          const title = document.createElement('h4');
+          title.className = "font-bold text-white";
+          title.textContent = lobby.name;
+          const details = document.createElement('p');
+          details.className = "text-xs text-gray-300";
+          details.textContent = `${lobby.map || 'Track not reported'} · ${lobby.players}/${lobby.maxPlayers} players · ${lobby.passwordProtected ? 'Password protected' : 'Open'}`;
+          const address = document.createElement('p');
+          address.className = "text-[11px] text-gray-500 font-mono";
+          address.textContent = lobby.address;
+          card.append(title, details, address);
+          container.appendChild(card);
+        }
+      } catch (error) {
+        console.error("Public server list failed:", error);
+        status.textContent = `Server list unavailable: ${error.message}`;
+        showToast(`Server list unavailable: ${error.message}`, "error");
+      }
+    }
+
+    function saveRatingOverrides() {
+      const sr = parseInt(document.getElementById('slider-sr-input').value);
+      const elo = parseInt(document.getElementById('slider-skill-input').value);
+      appState.driver.safetyRating = sr;
+      appState.driver.skillRating = elo;
+      closeModal('rating-override-modal');
+      saveState();
+      showToast("Ratings manually updated!");
+    }
+
+    async function copyDriverLicense() {
+      const text = `AMS2 Driver License: ${appState.driver.name} | Safety: S${appState.driver.safetyRating} | Skill: ${getSkillGradeLabel(appState.driver.skillRating)} | Level: ${appState.driver.level}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast("Career card data copied to clipboard!");
+      } catch (error) {
+        console.error("Clipboard write failed:", error);
+        showToast("Clipboard access was blocked by the browser.", "error");
+      }
+    }
+
+    // App Initialization on Page Load
+    window.onload = function() {
+      renderApp();
+      updateAccountControls();
+      loadAccount();
+      if ('serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register('/sw.js').catch(error => {
+          console.error("Service worker registration failed:", error);
+        });
+      }
+      window.addEventListener('online', () => {
+        if (currentUser && cloudSavedVersion < cloudSaveVersion) saveCloudState();
+      });
+      console.log("Automobilista 2 Sim Racing Career Hub initialized.");
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "ams2-racing-career-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  }
+}
