@@ -1200,12 +1200,12 @@
         const [{ initializeApp }, A, F] = await Promise.all([
           import(base + 'firebase-app.js'),
           import(base + 'firebase-auth.js'),
-          import(base + 'firebase-firestore.js')
+          import(base + 'firebase-database.js')
         ]);
         const app = initializeApp(cfg);
         const auth = A.getAuth(app);
         await A.setPersistence(auth, A.browserLocalPersistence);
-        const db = F.getFirestore(app);
+        const db = F.getDatabase(app);
         let unsub = null, ref = null, timer = null, applyingRemote = false;
 
         const run = async fn => {
@@ -1224,7 +1224,7 @@
         form.onsubmit = e => { e.preventDefault(); $('auth-signin').click(); };
 
         window.appSignOut = async () => {
-          if (timer) { clearTimeout(timer); timer = null; if (ref) await F.setDoc(ref, JSON.parse(JSON.stringify(appState))).catch(console.error); }
+          if (timer) { clearTimeout(timer); timer = null; if (ref) await F.set(ref, JSON.parse(JSON.stringify(appState))).catch(console.error); }
           await A.signOut(auth);
         };
 
@@ -1233,7 +1233,7 @@
           clearTimeout(timer);
           timer = setTimeout(() => {
             timer = null;
-            F.setDoc(ref, JSON.parse(JSON.stringify(state))).catch(e => {
+            F.set(ref, JSON.parse(JSON.stringify(state))).catch(e => {
               console.error(e);
               showToast('Cloud sync failed. Changes are saved on this device.', 'error');
             });
@@ -1258,20 +1258,20 @@
             setSignedIn(null);
             return;
           }
-          ref = F.doc(db, 'users', user.uid);
+          ref = F.ref(db, 'ams2Hub/' + user.uid);
           try {
-            const snap = await F.getDoc(ref);
-            if (snap.exists()) replaceState(snap.data());
-            else await F.setDoc(ref, JSON.parse(JSON.stringify(appState)));
+            const snap = await F.get(ref);
+            if (snap.exists()) replaceState(snap.val());
+            else await F.set(ref, JSON.parse(JSON.stringify(appState)));
           } catch (e) {
             console.error(e);
             showToast('Could not load cloud data. Using this device\'s copy.', 'error');
           }
           setSignedIn(user);
-          unsub = F.onSnapshot(ref, s => {
-            if (!s.exists() || s.metadata.hasPendingWrites || timer) return;
+          unsub = F.onValue(ref, s => {
+            if (!s.exists() || timer) return;
             applyingRemote = true;
-            try { replaceState(s.data()); } finally { applyingRemote = false; }
+            try { replaceState(s.val()); } finally { applyingRemote = false; }
           });
         });
       } catch (e) {
