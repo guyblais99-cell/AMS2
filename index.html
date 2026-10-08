@@ -96,10 +96,8 @@
 
         <!-- Quick Telemetry Status Pill (Mobile View toggle inside header) -->
         <div class="flex items-center gap-2 md:hidden">
-          <a id="steam-login-mobile" href="/api/auth" class="px-3 py-1.5 rounded-lg bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs">
-            <i class="fa-brands fa-steam"></i> Sign in
-          </a>
-          <button id="steam-logout-mobile" onclick="signOut()" class="hidden px-3 py-1.5 rounded-lg bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">Sign out</button>
+          <button id="signout-btn-mobile" onclick="window.appSignOut?.()" class="hidden px-3 py-1.5 rounded-lg bg-carbon-700 text-gray-300 border border-gray-700 text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
+          <button onclick="openModal('profile-modal')" class="px-3 py-1.5 rounded-lg bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs"><i class="fa-solid fa-user-pen"></i></button>
           <button id="quick-log-btn-mobile" onclick="openModal('log-race-modal')" class="px-3 py-1.5 rounded-lg bg-neon-cyan text-black font-bold text-xs hover:bg-cyan-300 transition-all flex items-center gap-1.5">
             <i class="fa-solid fa-plus"></i> Log Race
           </button>
@@ -117,18 +115,13 @@
         <button onclick="switchTab('events')" id="nav-events" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-calendar-days"></i> Race Calendar
         </button>
-        <button onclick="switchTab('live-telemetry')" id="nav-live-telemetry" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
-          <i class="fa-solid fa-satellite-dish"></i> CREST & Live
-        </button>
       </nav>
 
       <!-- Action Buttons -->
       <div class="hidden md:flex items-center gap-3">
-        <a id="steam-login-link" href="/api/auth" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs flex items-center gap-2">
-          <i class="fa-brands fa-steam text-sm"></i> Sign in with Steam
-        </a>
-        <button id="steam-logout-button" onclick="signOut()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">
-          Sign out
+        <button id="signout-btn" onclick="window.appSignOut?.()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i> <span id="signout-email"></span></button>
+        <button onclick="openModal('profile-modal')" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-sm"></i> Edit Profile & Stats
         </button>
         <button onclick="openModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-neon-cyan to-blue-500 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-neon-cyan/20 flex items-center gap-2">
           <i class="fa-solid fa-plus text-sm"></i> Log Race Result
@@ -162,12 +155,10 @@
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <h2 id="driver-name-display" class="text-2xl font-extrabold text-white tracking-tight">Apex Driver</h2>
-                <i class="fa-solid fa-circle-check text-neon-cyan text-sm" title="Verified Driver"></i>
+                
               </div>
               <p id="driver-title-display" class="text-xs text-neon-cyan font-mono font-semibold tracking-wide uppercase">GT3 Aspirant • Tier 2</p>
               <div class="flex items-center gap-3 text-xs text-gray-400 pt-1">
-                <span class="flex items-center gap-1"><i class="fa-brands fa-steam text-gray-300"></i> <span id="steam-status-display">Steam Linked</span></span>
-                <span>•</span>
                 <span class="flex items-center gap-1"><i class="fa-solid fa-shield-halved text-neon-amber"></i> Grade: <strong id="skill-grade-display" class="text-white">Silver II</strong></span>
               </div>
             </div>
@@ -475,7 +466,7 @@
             </div>
 
             <div class="flex justify-between items-center text-[10px] text-gray-400 pt-1">
-              <span>Steam ID: <strong id="card-steam-id" class="text-gray-200">Not linked</strong></span>
+              <span>Manual entry</span>
               <span class="text-neon-cyan font-mono">AUTOMOBILISTA 2 HUB</span>
             </div>
           </div>
@@ -499,27 +490,11 @@
           <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
             <i class="fa-solid fa-calendar-check text-neon-cyan"></i> Race Scheduler & Community Event Hub
           </h2>
-          <p class="text-xs text-gray-400">Browse public dedicated servers when Steam returns them, and plan your own AMS2 sessions.</p>
+          <p class="text-xs text-gray-400">Plan and track your own AMS2 sessions.</p>
         </div>
         <button onclick="openModal('create-event-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase tracking-wider hover:bg-cyan-300 transition-all flex items-center gap-2 shadow-lg shadow-neon-cyan/20">
           <i class="fa-solid fa-calendar-plus text-sm"></i> Schedule Custom Event
         </button>
-      </div>
-
-      <div class="carbon-card rounded-2xl p-6 space-y-4">
-        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
-          <div>
-            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-tower-broadcast text-neon-cyan"></i> Public AMS2 Dedicated Servers
-            </h3>
-            <p class="text-xs text-gray-400">Steam's public dedicated-server query is not a complete list of peer-hosted or private sessions.</p>
-          </div>
-          <button onclick="loadPublicLobbies()" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 text-xs font-bold">
-            <i class="fa-solid fa-rotate"></i> Refresh server list
-          </button>
-        </div>
-        <p id="lobbies-status" class="text-xs text-gray-400">Choose refresh to query the public server list.</p>
-        <div id="public-lobbies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
       <!-- Filter Bar -->
@@ -547,184 +522,6 @@
 
     </section>
 
-
-    <!-- TAB 4: CREST2 & LIVE TELEMETRY RELAY -->
-    <section id="tab-live-telemetry" class="tab-content hidden space-y-6">
-      
-      <!-- Telemetry Relay Control Banner -->
-      <div class="carbon-card rounded-2xl p-6 space-y-4">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-4">
-          <div>
-            <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
-              <i class="fa-solid fa-satellite-dish text-neon-cyan"></i> CREST2 Telemetry Relay & Simulator
-            </h2>
-            <p class="text-xs text-gray-400">The simulator below is illustrative. A CREST2 response can be checked locally, but live field mapping is not configured in this web app.</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <button id="toggle-sim-telemetry-btn" onclick="toggleTelemetrySim()" class="px-4 py-2 rounded-xl bg-neon-amber text-black font-extrabold text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all flex items-center gap-2">
-              <i class="fa-solid fa-play"></i> Start Telemetry Simulator
-            </button>
-            <button id="connect-crest-btn" onclick="connectCREST2()" class="px-4 py-2 rounded-xl bg-carbon-700 hover:bg-carbon-600 text-white font-bold text-xs uppercase tracking-wider border border-gray-700 transition-all flex items-center gap-2">
-              <i class="fa-solid fa-plug"></i> Test local CREST2
-            </button>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between text-xs font-mono">
-          <div class="flex items-center gap-2">
-            <span class="text-gray-400">Endpoint:</span>
-            <span class="text-gray-200 bg-carbon-900 px-2 py-1 rounded border border-gray-800">http://localhost:8080/crest2/v1/session</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-gray-400">Status:</span>
-            <span id="telemetry-status-badge" class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-bold">OFFLINE</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Live Dashboard Gauge Display Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        
-        <!-- Speed & RPM Cluster -->
-        <div class="lg:col-span-2 carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-6 relative overflow-hidden">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Simulated Vehicle Telemetry</span>
-            <span id="live-car-name" class="text-xs font-mono text-neon-cyan font-bold">Porsche 911 GT3 R</span>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4 items-center text-center">
-            <!-- Speed Gauge -->
-            <div class="space-y-1">
-              <span class="text-[10px] text-gray-400 uppercase tracking-widest">Speed (KM/H)</span>
-              <div id="telemetry-speed" class="text-5xl font-mono font-black text-white tracking-tighter">0</div>
-            </div>
-            <!-- Gear Gauge -->
-            <div class="space-y-1 border-l border-gray-800">
-              <span class="text-[10px] text-gray-400 uppercase tracking-widest">Current Gear</span>
-              <div id="telemetry-gear" class="text-5xl font-mono font-black text-neon-cyan">N</div>
-            </div>
-          </div>
-
-          <!-- RPM Bar -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs font-mono">
-              <span class="text-gray-400">RPM Gauge</span>
-              <span id="telemetry-rpm" class="text-neon-amber font-bold">0 / 8,800</span>
-            </div>
-            <div class="w-full h-4 bg-carbon-900 rounded-lg overflow-hidden p-0.5 border border-gray-800 flex gap-0.5">
-              <div id="rpm-bar-fill" class="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-red-600 rounded transition-all" style="width: 0%;"></div>
-            </div>
-          </div>
-
-          <!-- Throttle & Brake Pedals Inputs -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <div class="flex justify-between text-[10px] text-gray-400">
-                <span>Throttle</span>
-                <span id="telemetry-throttle-val">0%</span>
-              </div>
-              <div class="w-full h-2 bg-carbon-900 rounded overflow-hidden">
-                <div id="telemetry-throttle-bar" class="h-full bg-neon-green" style="width: 0%;"></div>
-              </div>
-            </div>
-
-            <div class="space-y-1">
-              <div class="flex justify-between text-[10px] text-gray-400">
-                <span>Brake</span>
-                <span id="telemetry-brake-val">0%</span>
-              </div>
-              <div class="w-full h-2 bg-carbon-900 rounded overflow-hidden">
-                <div id="telemetry-brake-bar" class="h-full bg-neon-crimson" style="width: 0%;"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dynamic Tire Temps Widget -->
-        <div class="carbon-card rounded-2xl p-6 space-y-4">
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
-            <span>Tire Temperatures (°C)</span>
-            <i class="fa-solid fa-temperature-three-quarters text-neon-amber"></i>
-          </h3>
-
-          <div class="grid grid-cols-2 gap-3 text-center font-mono">
-            <!-- Front Left -->
-            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
-              <p class="text-[9px] text-gray-500">Front Left</p>
-              <p id="tire-fl" class="text-lg font-bold text-neon-green">88°C</p>
-            </div>
-            <!-- Front Right -->
-            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
-              <p class="text-[9px] text-gray-500">Front Right</p>
-              <p id="tire-fr" class="text-lg font-bold text-neon-green">89°C</p>
-            </div>
-            <!-- Rear Left -->
-            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
-              <p class="text-[9px] text-gray-500">Rear Left</p>
-              <p id="tire-rl" class="text-lg font-bold text-neon-green">91°C</p>
-            </div>
-            <!-- Rear Right -->
-            <div class="bg-carbon-900/80 p-3 rounded-xl border border-gray-800">
-              <p class="text-[9px] text-gray-500">Rear Right</p>
-              <p id="tire-rr" class="text-lg font-bold text-neon-green">92°C</p>
-            </div>
-          </div>
-
-          <p class="text-[11px] text-gray-400 text-center">Optimum Window: <strong class="text-white">85°C - 98°C</strong></p>
-        </div>
-
-        <!-- Live Sector / Lap Delta -->
-        <div class="carbon-card rounded-2xl p-6 space-y-4 flex flex-col justify-between">
-          <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
-            <span>Sample Timing & Laps</span>
-            <i class="fa-solid fa-stopwatch text-neon-cyan"></i>
-          </h3>
-
-          <div class="space-y-2 font-mono">
-            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
-              <span class="text-gray-400">Current Lap:</span>
-              <span id="telemetry-lap-time" class="text-neon-cyan font-bold">1:42.318</span>
-            </div>
-            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
-              <span class="text-gray-400">Best Lap:</span>
-              <span id="telemetry-best-lap" class="text-neon-amber font-bold">1:41.002</span>
-            </div>
-            <div class="bg-carbon-900/80 p-2.5 rounded-lg flex justify-between items-center text-xs">
-              <span class="text-gray-400">Delta:</span>
-              <span id="telemetry-delta" class="text-neon-green font-bold">-0.245s</span>
-            </div>
-          </div>
-
-          <div class="text-[10px] text-gray-500 text-center">Track: Interlagos Grand Prix</div>
-        </div>
-
-      </div>
-
-      <!-- Steam Account and Cloud Sync -->
-      <div class="carbon-card rounded-2xl p-6 space-y-4">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-brands fa-steam text-neon-cyan"></i> Steam Account & Cloud Sync
-        </h3>
-        <p id="account-status" class="text-xs text-gray-400">Not signed in. Sign in with Steam to sync your career between devices.</p>
-        <div id="account-profile" class="hidden flex items-center gap-3 text-sm text-white">
-          <img id="steam-avatar" alt="" class="w-10 h-10 rounded-full border border-neon-cyan/40" />
-          <div>
-            <a id="steam-profile-link" class="font-bold text-neon-cyan" target="_blank" rel="noreferrer"></a>
-            <p id="steam-id-label" class="text-xs text-gray-400 font-mono"></p>
-          </div>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <a id="steam-login-panel-link" href="/api/auth" class="px-4 py-2 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase tracking-wider">
-            <i class="fa-brands fa-steam"></i> Sign in with Steam
-          </a>
-          <button id="steam-logout-panel-button" onclick="signOut()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs">Sign out</button>
-          <button id="refresh-steam-button" onclick="refreshSteamData()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs">
-            Refresh Steam profile and game stats
-          </button>
-        </div>
-        <p id="steam-stats-status" class="text-xs text-gray-400">Steam sign-in verifies your account; it does not itself expose native AMS2 multiplayer ratings.</p>
-        <div id="steam-game-stats" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-      </div>
 
     </section>
 
@@ -868,12 +665,55 @@
   </div>
 
 
+  <!-- Modal: Edit Profile & Stats (manual entry) -->
+  <div id="profile-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-pen text-neon-cyan"></i> Edit Profile & Stats</h3>
+        <button onclick="closeModal('profile-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="saveProfile(event)" class="grid grid-cols-2 gap-3 text-xs">
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Driver Name</span><input id="pf-name" type="text" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Title / Class</span><input id="pf-title" type="text" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Level</span><input id="pf-level" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Current XP</span><input id="pf-xp" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">XP for Next Level</span><input id="pf-nextXp" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Safety Rating</span><input id="pf-safetyRating" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Skill Rating</span><input id="pf-skillRating" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Total Races</span><input id="pf-races" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Wins</span><input id="pf-wins" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Podiums</span><input id="pf-podiums" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Clean Races</span><input id="pf-cleanRaces" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Total Incidents</span><input id="pf-totalIncidents" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+        <div class="col-span-2 pt-2 flex justify-end gap-3">
+          <button type="button" onclick="closeModal('profile-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Notification Toast Container -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
 
-  <!-- MAIN JAVASCRIPT LOGIC -->
-  <script>
+  <!-- Login overlay -->
+  <div id="auth-overlay" class="fixed inset-0 z-[60] bg-carbon-900 flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-sm w-full p-6 space-y-4 border border-neon-cyan/30">
+      <h2 class="text-xl font-extrabold text-white text-center">AMS2 <span class="text-neon-cyan">HUB</span></h2>
+      <p id="auth-message" class="text-xs text-gray-400 text-center">Checking sign-in...</p>
+      <form id="auth-form" onsubmit="return false" class="space-y-3 text-sm hidden">
+        <input id="auth-email" type="email" autocomplete="username" placeholder="Email" required class="w-full bg-carbon-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" />
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password (6+ characters)" required class="w-full bg-carbon-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" />
+        <button id="auth-signin" type="submit" class="w-full py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider text-xs">Sign In</button>
+        <button id="auth-signup" type="button" class="w-full py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs">Create Account</button>
+        <button id="auth-reset" type="button" class="w-full text-xs text-gray-400 hover:text-white">Forgot password?</button>
+      </form>
+      <button id="auth-offline" type="button" onclick="document.getElementById('auth-overlay').classList.add('hidden')" class="hidden w-full text-xs text-gray-400 hover:text-white">Continue on this device only</button>
+    </div>
+  </div>
+
+  <!-- MAIN JAVASCRIPT LOGIC -->  <script>
     // ----------------------------------------------------
     // INITIAL APP STATE & LOCALSTORAGE PERSISTENCE
     // ----------------------------------------------------
@@ -881,7 +721,7 @@
       driver: {
         name: "My Driver",
         title: "Career Starter",
-        steamId: "",
+
         level: 1,
         xp: 0,
         nextXp: 500,
@@ -906,7 +746,10 @@
     function readLocalState() {
       try {
         const saved = localStorage.getItem('AMS2_HUB_STATE');
-        return saved ? JSON.parse(saved) : cloneDefaultState();
+        if (!saved) return cloneDefaultState();
+        const parsed = JSON.parse(saved);
+        const defaults = cloneDefaultState();
+        return { ...defaults, ...parsed, driver: { ...defaults.driver, ...parsed.driver }, stats: { ...defaults.stats, ...parsed.stats } };
       } catch (error) {
         console.error("Could not read saved local app data:", error);
         return cloneDefaultState();
@@ -914,73 +757,28 @@
     }
 
     let appState = readLocalState();
-    let currentUser = null;
-    let cloudSaveTimer = null;
-    let cloudSaveVersion = 0;
-    let cloudSavedVersion = 0;
-    let cloudSavePromise = null;
-
     function saveState() {
       renderApp();
       try {
         localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
-        if (currentUser) localStorage.setItem('AMS2_HUB_ACCOUNT_ID', currentUser.steamId);
       } catch (error) {
         console.error("Could not save local app data:", error);
-        showToast("Could not save a local backup on this device.", "error");
+        showToast("Could not save data on this device.", "error");
       }
-      if (currentUser) {
-        cloudSaveVersion += 1;
-        document.getElementById('account-status').innerText = "Saving your changes to your Steam account...";
-        clearTimeout(cloudSaveTimer);
-        cloudSaveTimer = setTimeout(saveCloudState, 500);
-      }
+      window.onStateSaved?.(appState);
     }
 
-    async function saveCloudState() {
-      if (!currentUser || cloudSavePromise) return;
-      cloudSavePromise = (async () => {
-        while (cloudSavedVersion < cloudSaveVersion && currentUser) {
-          const version = cloudSaveVersion;
-          const response = await fetch('/api/data', {
-            method: 'PUT',
-            credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(appState)
-          });
-          const payload = await parseApiResponse(response);
-          if (!response.ok) throw new Error(payload.message || "Cloud save failed.");
-          cloudSavedVersion = version;
-        }
-      })();
-
-      try {
-        await cloudSavePromise;
-        if (currentUser && cloudSavedVersion === cloudSaveVersion) {
-          document.getElementById('account-status').innerText = "Signed in. Your career data is synced to the cloud.";
-        }
-      } catch (error) {
-        console.error("Cloud save failed:", error);
-        document.getElementById('account-status').innerText = `Cloud sync failed: ${error.message}`;
-        showToast(`Cloud sync failed: ${error.message}`, "error");
-      } finally {
-        cloudSavePromise = null;
-      }
+    function replaceState(next, notify = false) {
+      const defaults = cloneDefaultState();
+      appState = { ...defaults, ...next, driver: { ...defaults.driver, ...next.driver }, stats: { ...defaults.stats, ...next.stats } };
+      try { localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState)); } catch (error) { console.error(error); }
+      renderApp();
     }
 
     function escapeHTML(value) {
       return String(value).replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       })[character]);
-    }
-
-    async function parseApiResponse(response) {
-      const body = await response.text();
-      try {
-        return JSON.parse(body);
-      } catch {
-        throw new Error(`The server returned HTTP ${response.status}, not a JSON API response. Deploy the api/ routes with the site.`);
-      }
     }
 
     // ----------------------------------------------------
@@ -1030,6 +828,14 @@
     // MODAL CONTROLLERS & TOASTS
     // ----------------------------------------------------
     function openModal(modalId) {
+      if (modalId === 'profile-modal') {
+        for (const key of ['name', 'title', 'level', 'xp', 'nextXp', 'safetyRating', 'skillRating']) {
+          document.getElementById(`pf-${key}`).value = appState.driver[key];
+        }
+        for (const key of ['races', 'wins', 'podiums', 'cleanRaces', 'totalIncidents']) {
+          document.getElementById(`pf-${key}`).value = appState.stats[key];
+        }
+      }
       if (modalId === 'rating-override-modal') {
         document.getElementById('slider-sr-input').value = appState.driver.safetyRating;
         document.getElementById('slider-sr-val').innerText = appState.driver.safetyRating;
@@ -1228,79 +1034,12 @@
 
     // ----------------------------------------------------
     // ----------------------------------------------------
-    let telemetrySimInterval = null;
-    let isSimulating = false;
-
-    function toggleTelemetrySim() {
-      const btn = document.getElementById('toggle-sim-telemetry-btn');
-      const badge = document.getElementById('telemetry-status-badge');
-
-      if (isSimulating) {
-        clearInterval(telemetrySimInterval);
-        isSimulating = false;
-        btn.innerHTML = `<i class="fa-solid fa-play"></i> Start Telemetry Simulator`;
-        btn.className = "px-4 py-2 rounded-xl bg-neon-amber text-black font-extrabold text-xs uppercase tracking-wider hover:bg-yellow-400 transition-all flex items-center gap-2";
-        badge.innerText = "OFFLINE";
-        badge.className = "px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-bold";
-      } else {
-        isSimulating = true;
-        btn.innerHTML = `<i class="fa-solid fa-stop"></i> Stop Telemetry Simulator`;
-        btn.className = "px-4 py-2 rounded-xl bg-neon-crimson text-white font-extrabold text-xs uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2";
-        badge.innerText = "SIMULATOR LIVE";
-        badge.className = "px-2 py-0.5 rounded bg-neon-green/20 text-neon-green font-bold animate-pulse";
-
-        telemetrySimInterval = setInterval(updateTelemetryFrame, 200);
-      }
-    }
-
-    function updateTelemetryFrame() {
-      const speed = Math.floor(180 + Math.random() * 70);
-      const gear = Math.floor(3 + Math.random() * 4);
-      const rpm = Math.floor(6000 + Math.random() * 2500);
-      const throttle = Math.floor(70 + Math.random() * 30);
-      const brake = Math.random() > 0.8 ? Math.floor(Math.random() * 80) : 0;
-
-      document.getElementById('telemetry-speed').innerText = speed;
-      document.getElementById('telemetry-gear').innerText = gear;
-      document.getElementById('telemetry-rpm').innerText = `${rpm.toLocaleString()} / 8,800`;
-      document.getElementById('rpm-bar-fill').style.width = `${(rpm / 8800) * 100}%`;
-
-      document.getElementById('telemetry-throttle-val').innerText = `${throttle}%`;
-      document.getElementById('telemetry-throttle-bar').style.width = `${throttle}%`;
-
-      document.getElementById('telemetry-brake-val').innerText = `${brake}%`;
-      document.getElementById('telemetry-brake-bar').style.width = `${brake}%`;
-
-      // Random tire fluctuation
-      document.getElementById('tire-fl').innerText = `${Math.floor(88 + Math.random() * 4)}°C`;
-      document.getElementById('tire-fr').innerText = `${Math.floor(89 + Math.random() * 4)}°C`;
-      document.getElementById('tire-rl').innerText = `${Math.floor(90 + Math.random() * 4)}°C`;
-      document.getElementById('tire-rr').innerText = `${Math.floor(91 + Math.random() * 4)}°C`;
-    }
-
-    async function connectCREST2() {
-    showToast("Checking the local CREST2 endpoint...");
-    try {
-      const response = await fetch("http://localhost:8080/crest2/v1/session", {
-        signal: AbortSignal.timeout(4000)
-      });
-      if (!response.ok) throw new Error(`Endpoint returned HTTP ${response.status}.`);
-      await response.json();
-      showToast("CREST2 responded. Live telemetry field mapping is not configured.", "error");
-    } catch (error) {
-      console.error("CREST2 connection check failed:", error);
-      showToast("CREST2 is unavailable to this browser. Use the simulator or configure a compatible local relay.", "error");
-    }
-    }
-
-    // ----------------------------------------------------
     // ----------------------------------------------------
     function renderApp() {
       // Driver profile elements
       document.getElementById('driver-name-display').innerText = appState.driver.name;
       document.getElementById('driver-title-display').innerText = appState.driver.title;
       document.getElementById('card-driver-name').innerText = appState.driver.name;
-      document.getElementById('card-steam-id').innerText = appState.driver.steamId || "Not linked";
       document.getElementById('safety-badge-pill').innerText = `S${appState.driver.safetyRating}`;
       document.getElementById('skill-grade-display').innerText = getSkillGradeLabel(appState.driver.skillRating);
 
@@ -1382,209 +1121,21 @@
       document.getElementById('career-current-tier-text').textContent = activeTier.name.replace(/^Tier \d+: /, "");
     }
 
-    function updateAccountControls() {
-      const signedIn = Boolean(currentUser);
-      document.getElementById('steam-login-link').classList.toggle('hidden', signedIn);
-      document.getElementById('steam-login-mobile').classList.toggle('hidden', signedIn);
-      document.getElementById('steam-login-panel-link').classList.toggle('hidden', signedIn);
-      document.getElementById('steam-logout-button').classList.toggle('hidden', !signedIn);
-      document.getElementById('steam-logout-mobile').classList.toggle('hidden', !signedIn);
-      document.getElementById('steam-logout-panel-button').classList.toggle('hidden', !signedIn);
-      document.getElementById('refresh-steam-button').classList.toggle('hidden', !signedIn);
-      document.getElementById('account-profile').classList.toggle('hidden', !signedIn);
-
-      if (signedIn) {
-        document.getElementById('account-status').textContent = cloudSavedVersion < cloudSaveVersion
-          ? `Signed in as Steam account ${currentUser.steamId}. Cloud sync is pending; check your connection.`
-          : `Signed in as Steam account ${currentUser.steamId}. Your app data syncs across devices.`;
-        document.getElementById('steam-id-label').textContent = `SteamID64: ${currentUser.steamId}`;
-      } else {
-        document.getElementById('account-status').textContent = "Not signed in. Sign in with Steam to sync your career between devices.";
-        document.getElementById('steam-profile-link').textContent = "";
-        document.getElementById('steam-avatar').removeAttribute('src');
-      }
-    }
-
-    async function loadAccount() {
-      const params = new URLSearchParams(window.location.search);
-      const loginResult = params.get('steamLogin');
-      if (loginResult) {
-        history.replaceState(null, "", window.location.pathname);
-        if (loginResult === "connected") showToast("Steam account verified.");
-        else showToast(`Steam sign-in did not complete (${loginResult.replaceAll('_', ' ')}).`, "error");
-      }
-
-      if (window.location.protocol === 'file:') {
-        updateAccountControls();
-        document.getElementById('account-status').textContent = "Steam sign-in and cloud sync require the deployed HTTPS app. You can still use this file's local demo.";
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/data', { credentials: 'same-origin' });
-        if (response.status === 401) {
-          if (localStorage.getItem('AMS2_HUB_ACCOUNT_ID')) {
-            localStorage.removeItem('AMS2_HUB_STATE');
-            localStorage.removeItem('AMS2_HUB_ACCOUNT_ID');
-            appState = cloneDefaultState();
-            renderApp();
-          }
-          updateAccountControls();
-          return;
-        }
-        const payload = await parseApiResponse(response);
-        if (!response.ok) throw new Error(payload.message || "Account data could not be loaded.");
-
-        currentUser = { steamId: payload.steamId };
-        if (payload.state) {
-          appState = payload.state;
-          appState.driver.steamId = payload.steamId;
-          localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
-          localStorage.setItem('AMS2_HUB_ACCOUNT_ID', payload.steamId);
-          cloudSavedVersion = cloudSaveVersion;
-        } else {
-          const previousAccountId = localStorage.getItem('AMS2_HUB_ACCOUNT_ID');
-          if (previousAccountId && previousAccountId !== payload.steamId) {
-            appState = cloneDefaultState();
-            showToast("Local data from another Steam account was not copied to this account.", "error");
-          }
-          appState.driver.steamId = payload.steamId;
-          localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState));
-          localStorage.setItem('AMS2_HUB_ACCOUNT_ID', payload.steamId);
-          cloudSaveVersion += 1;
-          await saveCloudState();
-        }
-        updateAccountControls();
-        renderApp();
-        refreshSteamData(false);
-      } catch (error) {
-        console.error("Account sync could not be loaded:", error);
-        document.getElementById('account-status').textContent = `Account sync unavailable: ${error.message}`;
-        showToast(`Account sync unavailable: ${error.message}`, "error");
-      }
-    }
-
-    async function refreshSteamData(showResult = true) {
-      if (!currentUser) return;
-      const status = document.getElementById('steam-stats-status');
-      status.textContent = "Checking Steam profile and published AMS2 game statistics...";
-      try {
-        const response = await fetch('/api/profile', { credentials: 'same-origin' });
-        const payload = await parseApiResponse(response);
-        if (!response.ok) throw new Error(payload.message || "Steam data could not be loaded.");
-
-        currentUser.steamId = payload.steamId;
-        if (payload.profile) {
-          const profileLink = document.getElementById('steam-profile-link');
-          profileLink.textContent = payload.profile.name;
-          profileLink.href = payload.profile.profileUrl;
-          document.getElementById('steam-avatar').src = payload.profile.avatar;
-          appState.driver.name = payload.profile.name;
-          appState.driver.steamId = payload.steamId;
-          saveState();
-        } else {
-          document.getElementById('steam-profile-link').textContent = `Steam ${payload.steamId}`;
-          document.getElementById('steam-profile-link').removeAttribute('href');
-        }
-        document.getElementById('steam-id-label').textContent = `SteamID64: ${payload.steamId}`;
-        status.textContent = payload.message;
-        renderSteamGameStats(payload.gameStats);
-        if (showResult) showToast("Steam data refreshed.");
-      } catch (error) {
-        console.error("Steam profile refresh failed:", error);
-        status.textContent = `Steam data unavailable: ${error.message}`;
-        if (showResult) showToast(`Steam data unavailable: ${error.message}`, "error");
-      }
-    }
-
-    function renderSteamGameStats(gameStats) {
-      const container = document.getElementById('steam-game-stats');
-      container.replaceChildren();
-      if (!gameStats) return;
-      const rows = [
-        ...gameStats.stats.slice(0, 20).map(item => [`Stat: ${item.name}`, item.value]),
-        ...gameStats.achievements.slice(0, 20).map(item => [`Achievement: ${item.name}`, item.achieved ? 'Unlocked' : 'Locked'])
-      ];
-      if (!rows.length) return;
-      for (const [label, value] of rows) {
-        const card = document.createElement('div');
-        card.className = "carbon-card rounded-xl p-3 text-xs flex justify-between gap-3";
-        const name = document.createElement('span');
-        name.className = "text-gray-400 break-all";
-        name.textContent = label;
-        const result = document.createElement('strong');
-        result.className = "text-white";
-        result.textContent = String(value);
-        card.append(name, result);
-        container.appendChild(card);
-      }
-    }
-
-    async function signOut() {
-      try {
-        clearTimeout(cloudSaveTimer);
-        if (cloudSavedVersion < cloudSaveVersion) {
-          await saveCloudState();
-          if (cloudSavedVersion < cloudSaveVersion) {
-            throw new Error("Pending changes could not be synced. Check your connection and try again.");
-          }
-        }
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          credentials: 'same-origin'
-        });
-        const payload = await parseApiResponse(response);
-        if (!response.ok) throw new Error(payload.message || "Sign-out failed.");
-        currentUser = null;
-        clearTimeout(cloudSaveTimer);
-        localStorage.removeItem('AMS2_HUB_STATE');
-        localStorage.removeItem('AMS2_HUB_ACCOUNT_ID');
-        appState = cloneDefaultState();
-        document.getElementById('steam-game-stats').replaceChildren();
-        document.getElementById('steam-stats-status').textContent = "Steam sign-in verifies your account; it does not itself expose native AMS2 multiplayer ratings.";
-        updateAccountControls();
-        renderApp();
-        showToast("Signed out. Cloud data remains linked to your Steam account.");
-      } catch (error) {
-        console.error("Sign-out failed:", error);
-        showToast(`Sign-out failed: ${error.message}`, "error");
-      }
-    }
-
-    async function loadPublicLobbies() {
-      const status = document.getElementById('lobbies-status');
-      const container = document.getElementById('public-lobbies-grid');
-      status.textContent = "Querying Steam's public dedicated-server list...";
-      container.replaceChildren();
-      try {
-        const response = await fetch('/api/lobbies', { credentials: 'same-origin' });
-        const payload = await parseApiResponse(response);
-        if (!response.ok) throw new Error(payload.message || "Server list could not be loaded.");
-        status.textContent = `${payload.coverage} Refreshed ${new Date(payload.fetchedAt).toLocaleTimeString()}.`;
-        if (!payload.lobbies.length) {
-          container.innerHTML = '<p class="text-sm text-gray-400">Steam returned no public dedicated servers for this query.</p>';
-          return;
-        }
-        for (const lobby of payload.lobbies) {
-          const card = document.createElement('article');
-          card.className = "carbon-card rounded-xl p-4 space-y-2";
-          const title = document.createElement('h4');
-          title.className = "font-bold text-white";
-          title.textContent = lobby.name;
-          const details = document.createElement('p');
-          details.className = "text-xs text-gray-300";
-          details.textContent = `${lobby.map || 'Track not reported'} · ${lobby.players}/${lobby.maxPlayers} players · ${lobby.passwordProtected ? 'Password protected' : 'Open'}`;
-          const address = document.createElement('p');
-          address.className = "text-[11px] text-gray-500 font-mono";
-          address.textContent = lobby.address;
-          card.append(title, details, address);
-          container.appendChild(card);
-        }
-      } catch (error) {
-        console.error("Public server list failed:", error);
-        status.textContent = `Server list unavailable: ${error.message}`;
-        showToast(`Server list unavailable: ${error.message}`, "error");
-      }
+    function saveProfile(e) {
+      e.preventDefault();
+      const num = (key, min = 0) => Math.max(min, parseInt(document.getElementById(`pf-${key}`).value, 10) || 0);
+      const name = document.getElementById('pf-name').value.trim();
+      if (name) appState.driver.name = name;
+      appState.driver.title = document.getElementById('pf-title').value.trim() || appState.driver.title;
+      appState.driver.level = num('level', 1);
+      appState.driver.xp = num('xp');
+      appState.driver.nextXp = num('nextXp', 1);
+      appState.driver.safetyRating = num('safetyRating');
+      appState.driver.skillRating = num('skillRating');
+      for (const key of ['races', 'wins', 'podiums', 'cleanRaces', 'totalIncidents']) appState.stats[key] = num(key);
+      closeModal('profile-modal');
+      saveState();
+      showToast("Profile and stats updated.");
     }
 
     function saveRatingOverrides() {
@@ -1611,18 +1162,124 @@
     // App Initialization on Page Load
     window.onload = function() {
       renderApp();
-      updateAccountControls();
-      loadAccount();
       if ('serviceWorker' in navigator && window.isSecureContext) {
-        navigator.serviceWorker.register('/sw.js').catch(error => {
+        navigator.serviceWorker.register('sw.js').catch(error => {
           console.error("Service worker registration failed:", error);
         });
       }
-      window.addEventListener('online', () => {
-        if (currentUser && cloudSavedVersion < cloudSaveVersion) saveCloudState();
-      });
       console.log("Automobilista 2 Sim Racing Career Hub initialized.");
     };
   </script>
-</body>
+  <script src="firebase-config.js"></script>
+  <script type="module">
+    const $ = id => document.getElementById(id);
+    const msg = $('auth-message');
+    const form = $('auth-form');
+    const cfg = window.FIREBASE_CONFIG || {};
+
+    function localOnly(text) {
+      msg.textContent = text;
+      form.classList.add('hidden');
+      $('auth-offline').classList.remove('hidden');
+    }
+
+    const friendly = code => ({
+      'auth/invalid-credential': 'Wrong email or password.',
+      'auth/invalid-email': 'Enter a valid email address.',
+      'auth/email-already-in-use': 'An account with that email already exists. Sign in instead.',
+      'auth/weak-password': 'Password must be at least 6 characters.',
+      'auth/too-many-requests': 'Too many attempts. Try again later.',
+      'auth/network-request-failed': 'Network error. Check your connection.'
+    })[code] || 'Something went wrong. Please try again.';
+
+    if (!cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY') {
+      localOnly('Firebase is not configured yet. Edit firebase-config.js to enable login and sync.');
+    } else {
+      try {
+        const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+        const [{ initializeApp }, A, F] = await Promise.all([
+          import(base + 'firebase-app.js'),
+          import(base + 'firebase-auth.js'),
+          import(base + 'firebase-firestore.js')
+        ]);
+        const app = initializeApp(cfg);
+        const auth = A.getAuth(app);
+        await A.setPersistence(auth, A.browserLocalPersistence);
+        const db = F.getFirestore(app);
+        let unsub = null, ref = null, timer = null, applyingRemote = false;
+
+        const run = async fn => {
+          msg.textContent = '';
+          try { await fn(); } catch (e) { console.error(e); msg.textContent = friendly(e.code); }
+        };
+        const creds = () => [$('auth-email').value.trim(), $('auth-password').value];
+        $('auth-signin').onclick = () => run(() => A.signInWithEmailAndPassword(auth, ...creds()));
+        $('auth-signup').onclick = () => run(() => A.createUserWithEmailAndPassword(auth, ...creds()));
+        $('auth-reset').onclick = () => run(async () => {
+          const email = $('auth-email').value.trim();
+          if (!email) { msg.textContent = 'Enter your email first.'; return; }
+          await A.sendPasswordResetEmail(auth, email);
+          msg.textContent = 'Password reset email sent.';
+        });
+        form.onsubmit = e => { e.preventDefault(); $('auth-signin').click(); };
+
+        window.appSignOut = async () => {
+          if (timer) { clearTimeout(timer); timer = null; if (ref) await F.setDoc(ref, JSON.parse(JSON.stringify(appState))).catch(console.error); }
+          await A.signOut(auth);
+        };
+
+        window.onStateSaved = state => {
+          if (!ref || applyingRemote) return;
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            timer = null;
+            F.setDoc(ref, JSON.parse(JSON.stringify(state))).catch(e => {
+              console.error(e);
+              showToast('Cloud sync failed. Changes are saved on this device.', 'error');
+            });
+          }, 600);
+        };
+
+        const setSignedIn = user => {
+          for (const id of ['signout-btn', 'signout-btn-mobile']) $(id).classList.toggle('hidden', !user);
+          $('signout-email').textContent = user ? user.email : '';
+          $('auth-overlay').classList.toggle('hidden', Boolean(user));
+          form.classList.toggle('hidden', Boolean(user));
+        };
+
+        A.onAuthStateChanged(auth, async user => {
+          if (unsub) { unsub(); unsub = null; }
+          ref = null;
+          if (!user) {
+            replaceState({});
+            localStorage.removeItem('AMS2_HUB_STATE');
+            msg.textContent = 'Sign in to sync your career across devices.';
+            form.classList.remove('hidden');
+            setSignedIn(null);
+            return;
+          }
+          ref = F.doc(db, 'users', user.uid);
+          try {
+            const snap = await F.getDoc(ref);
+            if (snap.exists()) replaceState(snap.data());
+            else await F.setDoc(ref, JSON.parse(JSON.stringify(appState)));
+          } catch (e) {
+            console.error(e);
+            showToast('Could not load cloud data. Using this device\'s copy.', 'error');
+          }
+          setSignedIn(user);
+          unsub = F.onSnapshot(ref, s => {
+            if (!s.exists() || s.metadata.hasPendingWrites || timer) return;
+            applyingRemote = true;
+            try { replaceState(s.data()); } finally { applyingRemote = false; }
+          });
+        });
+      } catch (e) {
+        console.error('Firebase failed to load:', e);
+        localOnly('Could not reach the sign-in service (offline?).');
+      }
+    }
+  </script>
+
+  <!-- MAIN JAVASCRIPT LOGIC --></body>
 </html>

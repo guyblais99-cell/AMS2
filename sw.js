@@ -1,9 +1,10 @@
-const CACHE_NAME = "ams2-hub-shell-v1";
-const APP_SHELL = ["/", "/index.html", "/app.css", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
+const CACHE_NAME = "ams2-hub-shell-v3";
+const APP_SHELL = ["/", "/index.html", "/app.css", "/firebase-config.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 const EXTERNAL_ASSET_HOSTS = new Set([
   "cdnjs.cloudflare.com",
   "fonts.googleapis.com",
-  "fonts.gstatic.com"
+  "fonts.gstatic.com",
+  "www.gstatic.com"
 ]);
 
 self.addEventListener("install", (event) => {
@@ -27,7 +28,6 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin === self.location.origin && url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
