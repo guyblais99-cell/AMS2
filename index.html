@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMS2 Sim Racing Career & Event Hub</title>
+  <title>AMS2 Race Events & Results Hub</title>
   <meta name="theme-color" content="#0B0D11" />
-  <meta name="description" content="Track your Automobilista 2 racing career, events, and milestones." />
+  <meta name="description" content="Plan Automobilista 2 race events and track results across championships." />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon-192.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -133,14 +133,13 @@
               AMS2 <span class="text-neon-cyan">HUB</span>
               <span class="text-xs px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono">v2.5 PRO</span>
             </h1>
-            <p class="text-xs text-gray-400 font-medium">Automobilista 2 Sim Racing Career Manager</p>
+            <p class="text-xs text-gray-400 font-medium">Multiplayer Events & Race Results</p>
           </div>
         </div>
 
         <!-- Quick Telemetry Status Pill (Mobile View toggle inside header) -->
         <div class="flex items-center gap-2 md:hidden">
           <button id="signout-btn-mobile" onclick="window.appSignOut?.()" class="hidden px-3 py-1.5 rounded-lg bg-carbon-700 text-gray-300 border border-gray-700 text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
-          <button onclick="openModal('profile-modal')" class="px-3 py-1.5 rounded-lg bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs"><i class="fa-solid fa-user-pen"></i></button>
           <button id="quick-log-btn-mobile" onclick="openModal('log-race-modal')" class="px-3 py-1.5 rounded-lg bg-neon-cyan text-black font-bold text-xs hover:bg-cyan-300 transition-all flex items-center gap-1.5">
             <i class="fa-solid fa-plus"></i> Log Race
           </button>
@@ -163,9 +162,6 @@
       <!-- Action Buttons -->
       <div class="hidden md:flex items-center gap-3">
         <button id="signout-btn" onclick="window.appSignOut?.()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i> <span id="signout-email"></span></button>
-        <button onclick="openModal('profile-modal')" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs flex items-center gap-2">
-          <i class="fa-solid fa-user-pen text-sm"></i> Edit Profile & Stats
-        </button>
         <button onclick="openModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-gradient-to-r from-neon-cyan to-blue-500 text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-neon-cyan/20 flex items-center gap-2">
           <i class="fa-solid fa-plus text-sm"></i> Log Race Result
         </button>
@@ -184,8 +180,8 @@
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-content space-y-6">
       
-      <!-- Top Driver Profile Summary Banner -->
-      <div class="carbon-card rounded-2xl p-6 relative overflow-hidden">
+      <!-- Driver career profile removed; dashboard focuses on race activity. -->
+      <div class="carbon-card rounded-2xl p-6 relative overflow-hidden hidden">
         <div class="absolute -right-12 -top-12 w-64 h-64 bg-neon-cyan/5 rounded-full blur-3xl pointer-events-none"></div>
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
           
@@ -265,20 +261,18 @@
 
         <div class="carbon-card p-4 rounded-xl space-y-1">
           <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold flex items-center justify-between">
-            Clean Race Rate <i class="fa-solid fa-shield-cat text-neon-green"></i>
+            Avg Finish <i class="fa-solid fa-flag-checkered text-neon-green"></i>
           </div>
-          <div id="stat-clean-rate" class="text-2xl font-extrabold text-neon-green font-mono">88.5%</div>
-          <div class="text-[11px] text-neon-green flex items-center gap-1">
-            Avg Incidents: <span id="stat-avg-incidents" class="text-white font-bold">2.1</span>/race
-          </div>
+          <div id="stat-average-finish" class="text-2xl font-extrabold text-neon-green font-mono">N/A</div>
+          <div class="text-[11px] text-gray-400">Across recorded results</div>
         </div>
       </div>
 
-      <!-- Main Dashboard Grid Layout (Target Calculator & Scheduled Event Widget) -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Existing Next Scheduled Race widget -->
+      <div class="grid grid-cols-1 gap-6">
         
         <!-- Target Goal Calculator & License Breakdown -->
-        <div class="lg:col-span-2 carbon-card rounded-2xl p-6 space-y-5">
+        <div class="hidden lg:col-span-2 carbon-card rounded-2xl p-6 space-y-5">
           <div class="flex items-center justify-between border-b border-gray-800 pb-3">
             <div>
               <h3 class="text-lg font-bold text-white flex items-center gap-2">
@@ -354,42 +348,27 @@
         </div>
 
         <!-- Next Scheduled Event Widget with Countdown -->
-        <div class="carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-4">
+        <div class="carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-4 max-w-3xl w-full">
           <div class="space-y-2 border-b border-gray-800 pb-3">
             <div class="flex items-center justify-between">
               <span class="text-xs font-bold px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 uppercase">Next Scheduled Race</span>
               <i class="fa-solid fa-clock text-neon-cyan animate-pulse"></i>
             </div>
-            <h3 id="next-event-title" class="text-lg font-bold text-white">Nürburgring Endurance GT3</h3>
-            <p id="next-event-class" class="text-xs text-gray-400 font-mono"><i class="fa-solid fa-car text-gray-500"></i> GT3 Gen2 • Nürburgring Nordschleife</p>
+            <h3 id="next-event-title" class="text-lg font-bold text-white">No upcoming races</h3>
+            <p id="next-event-class" class="text-xs text-gray-400 font-mono">Your scheduled events and championship rounds appear here.</p>
           </div>
 
           <!-- Countdown Display -->
           <div class="bg-carbon-900/90 p-4 rounded-xl border border-neon-cyan/20 text-center space-y-1">
             <span class="text-[10px] uppercase tracking-widest text-gray-400">Session Starts In</span>
             <div id="countdown-timer" class="text-2xl font-mono font-extrabold text-neon-cyan tracking-wider">
-              01d : 04h : 12m : 45s
+              -- : -- : -- : --
             </div>
-          </div>
-
-          <!-- Quick Launch / Strategy Checklist -->
-          <div class="space-y-2">
-            <p class="text-xs font-bold text-gray-300">Pre-Race Prep Checklist:</p>
-            <div class="space-y-1 text-xs text-gray-400">
-              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
-                <input type="checkbox" checked class="rounded accent-neon-cyan bg-carbon-800"> Fuel & Pit Strategy Configured
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
-                <input type="checkbox" checked class="rounded accent-neon-cyan bg-carbon-800"> Weather Radar Checked (Rain Prep)
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer hover:text-white">
-                <input type="checkbox" class="rounded accent-neon-cyan bg-carbon-800"> FFB & Pedals Calibrated
-              </label>
-            </div>
+            <p id="next-event-count" class="text-[10px] text-gray-500"></p>
           </div>
 
           <button onclick="switchTab('events')" class="w-full py-2.5 rounded-xl bg-carbon-700 hover:bg-carbon-600 text-white font-bold text-xs uppercase tracking-wider transition-all border border-gray-700 flex items-center justify-center gap-2">
-            View All Scheduled Events <i class="fa-solid fa-arrow-right"></i>
+            View All Upcoming Races <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
 
@@ -400,9 +379,9 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-neon-cyan"></i> Recent Race Activity Log
+              <i class="fa-solid fa-list-check text-neon-cyan"></i> Recent Race Results
             </h3>
-            <p class="text-xs text-gray-400">Historical performance breakdown and rating changes in AMS2</p>
+            <p class="text-xs text-gray-400">Latest captured and manually recorded results</p>
           </div>
           <button onclick="openModal('log-race-modal')" class="text-xs px-3 py-1.5 rounded-lg bg-neon-cyan text-black font-bold hover:bg-cyan-300 transition-all">
             + Add Result
@@ -414,12 +393,12 @@
             <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono border-b border-gray-800">
               <tr>
                 <th class="p-3">Date</th>
-                <th class="p-3">Track / Circuit</th>
-                <th class="p-3">Car Class</th>
-                <th class="p-3">Finish Pos</th>
-                <th class="p-3">Incidents</th>
-                <th class="p-3">XP Earned</th>
-                <th class="p-3">Rating Δ</th>
+                <th class="p-3">Competition</th>
+                <th class="p-3">Game</th>
+                <th class="p-3">Track</th>
+                <th class="p-3">Vehicle</th>
+                <th class="p-3">Finish</th>
+                <th class="p-3">Status</th>
               </tr>
             </thead>
             <tbody id="recent-races-tbody" class="divide-y divide-gray-800/60 font-medium">
@@ -600,7 +579,7 @@
     <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
       <div class="flex justify-between items-center border-b border-gray-800 pb-3">
         <h3 class="text-lg font-bold text-white flex items-center gap-2">
-          <i class="fa-solid fa-flag-checkered text-neon-cyan"></i> Log AMS2 Race Result
+          <i class="fa-solid fa-flag-checkered text-neon-cyan"></i> Log Race Result
         </h3>
         <button onclick="closeModal('log-race-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
@@ -617,37 +596,13 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-gray-300 font-semibold mb-1">Vehicle Class</label>
-            <select id="modal-class-input" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan">
-              <option value="GT3 Gen2">GT3 Gen2</option>
-              <option value="LMDh / Hypercar">LMDh / Hypercar</option>
-              <option value="GT4">GT4</option>
-              <option value="Formula Classic">Formula Classic</option>
-              <option value="Copa Truck">Copa Truck</option>
-              <option value="Kart 125cc">Kart 125cc</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-gray-300 font-semibold mb-1">Finish Position</label>
-            <input type="number" id="modal-pos-input" min="1" max="32" required value="1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-gray-300 font-semibold mb-1">Incident Points (0 = Clean)</label>
-            <input type="number" id="modal-incidents-input" min="0" max="50" required value="0" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
-          </div>
-          <div>
-            <label class="block text-gray-300 font-semibold mb-1">Lobby Driver Count</label>
-            <input type="number" id="modal-drivers-input" min="2" max="36" required value="16" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
-          </div>
+          <label class="block"><span class="block text-gray-300 font-semibold mb-1">Vehicle / class</span><input id="modal-car-input" type="text" required placeholder="e.g. McLaren 720S GT3" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+          <label class="block"><span class="block text-gray-300 font-semibold mb-1">Finish position</span><input type="number" id="modal-pos-input" min="1" max="99" required value="1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         </div>
 
         <div class="pt-2 flex justify-end gap-3">
           <button type="button" onclick="closeModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Calculate & Save</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Save Result</button>
         </div>
       </form>
     </div>
@@ -659,6 +614,7 @@
       <form onsubmit="handleCreateChampionship(event)" class="space-y-4 text-xs">
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship vehicle / class (same for every race)</span><input id="championship-vehicle-input" type="search" list="championship-known-vehicles" required placeholder="Search or enter vehicle" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="block text-gray-500 mt-1">Comma-separated, e.g. 25,18,15,12,10</span></label></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
@@ -1021,14 +977,8 @@
 
     // ----------------------------------------------------
     // ----------------------------------------------------
-    function renderEvents() {
-      const container = document.getElementById('events-grid-container');
-      if (!container) return;
-
-      const searchTerm = (document.getElementById('event-search-input')?.value || '').trim().toLowerCase();
-      const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
-      const now = Date.now();
-      const entries = [
+    function buildCalendarEntries() {
+      return [
         ...appState.events.map(event => {
           const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id));
           return {
@@ -1050,6 +1000,44 @@
           const rightTime = Number.isFinite(right.timestamp) ? right.timestamp : Number.MAX_SAFE_INTEGER;
           return leftTime - rightTime || left.title.localeCompare(right.title);
         });
+    }
+
+    function renderNextScheduledRace() {
+      const title = document.getElementById('next-event-title');
+      const details = document.getElementById('next-event-class');
+      const countdown = document.getElementById('countdown-timer');
+      const count = document.getElementById('next-event-count');
+      if (!title || !details || !countdown || !count) return;
+      const now = Date.now();
+      const upcoming = buildCalendarEntries().filter(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
+      const next = upcoming[0];
+      count.textContent = `${upcoming.length} upcoming race${upcoming.length === 1 ? '' : 's'}`;
+      if (!next) {
+        title.textContent = 'No upcoming races';
+        details.textContent = 'Create an event or add championship rounds in the calendar.';
+        countdown.textContent = '-- : -- : -- : --';
+        return;
+      }
+      title.textContent = next.title;
+      details.textContent = `${next.vehicle} · ${next.track} · ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+      let secondsRemaining = Math.max(0, Math.floor((next.timestamp - now) / 1000));
+      const days = Math.floor(secondsRemaining / 86400);
+      secondsRemaining %= 86400;
+      const hours = Math.floor(secondsRemaining / 3600);
+      secondsRemaining %= 3600;
+      const minutes = Math.floor(secondsRemaining / 60);
+      const seconds = secondsRemaining % 60;
+      countdown.textContent = `${String(days).padStart(2, '0')}d : ${String(hours).padStart(2, '0')}h : ${String(minutes).padStart(2, '0')}m : ${String(seconds).padStart(2, '0')}s`;
+    }
+
+    function renderEvents() {
+      const container = document.getElementById('events-grid-container');
+      if (!container) return;
+
+      const searchTerm = (document.getElementById('event-search-input')?.value || '').trim().toLowerCase();
+      const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
+      const now = Date.now();
+      const entries = buildCalendarEntries();
 
       const nextEntry = entries.find(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
       const active = appState.activeCompetition;
@@ -1124,7 +1112,7 @@
         carClass,
         duration: `${Number(document.getElementById('event-duration-input').value) || 45} min`,
         startTime: new Date(startTime).toISOString(),
-        scheduled: false,
+        scheduled: true,
         createdAt: new Date().toISOString()
       };
       appState.events.unshift(eventRecord);
@@ -1303,13 +1291,13 @@
       const container = document.getElementById('championship-rounds-fields');
       const countInput = document.getElementById('championship-rounds-input');
       if (!container || !countInput) return;
+      const sharedVehicle = document.getElementById('championship-vehicle-input')?.value || '';
       const currentValues = [];
       for (let index = 1; index <= 50; index += 1) {
         const track = document.getElementById(`championship-round-${index}-track`);
         if (!track) break;
         currentValues.push({
           track: track.value,
-          vehicle: document.getElementById(`championship-round-${index}-vehicle`)?.value || '',
           startTime: document.getElementById(`championship-round-${index}-time`)?.value || ''
         });
       }
@@ -1331,10 +1319,8 @@
         const previous = currentValues[index] || championshipRoundDraft[index] || {};
         return `<div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3 space-y-2">
           <h4 class="text-xs font-bold text-neon-cyan">Race ${roundNumber}</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <label class="block"><span class="block text-gray-400 mb-1">Track</span><input id="championship-round-${roundNumber}-track" type="search" list="championship-known-tracks" value="${escapeHTML(previous.track || '')}" placeholder="Search or enter track" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
-            <label class="block"><span class="block text-gray-400 mb-1">Vehicle / class</span><input id="championship-round-${roundNumber}-vehicle" type="search" list="championship-known-vehicles" value="${escapeHTML(previous.vehicle || '')}" placeholder="Search or enter vehicle" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
-          </div>
+          <label class="block"><span class="block text-gray-400 mb-1">Track</span><input id="championship-round-${roundNumber}-track" type="search" list="championship-known-tracks" value="${escapeHTML(previous.track || '')}" placeholder="Search or enter track" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
+          <p class="text-[11px] text-gray-500">Vehicle: ${escapeHTML(sharedVehicle || 'Set above')}</p>
           <label class="block"><span class="block text-gray-400 mb-1">Race time (your local time)</span><input id="championship-round-${roundNumber}-time" type="datetime-local" value="${escapeHTML(previous.startTime || '')}" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
         </div>`;
       }).join('') + `<datalist id="championship-known-tracks">${trackOptions}</datalist><datalist id="championship-known-vehicles">${vehicleOptions}</datalist>`;
@@ -1404,6 +1390,7 @@
       const form = document.getElementById('create-championship-modal').querySelector('form');
       form.reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-vehicle-input').value = '';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-fields').innerHTML = '';
@@ -1423,6 +1410,7 @@
       document.getElementById('championship-name-input').value = championship.name || '';
       document.getElementById('championship-game-input').value = championship.game || 'Automobilista 2';
       document.getElementById('championship-season-input').value = championship.season || '';
+      document.getElementById('championship-vehicle-input').value = championship.vehicle || championshipRoundPlans(championship)[0]?.vehicle || '';
       document.getElementById('championship-rounds-input').value = championshipRoundCount(championship) || 1;
       document.getElementById('championship-points-input').value = (championship.points || []).join(',') || '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-fields').innerHTML = '';
@@ -1459,12 +1447,12 @@
         : null;
       const name = document.getElementById('championship-name-input').value.trim();
       const game = document.getElementById('championship-game-input').value.trim();
+      const vehicle = document.getElementById('championship-vehicle-input').value.trim();
       const rawPoints = document.getElementById('championship-points-input').value.split(',').map(value => Number(value.trim()));
       const roundCount = Math.max(1, Math.min(50, Number(document.getElementById('championship-rounds-input').value) || 1));
       const roundPlans = Array.from({ length: roundCount }, (_, index) => {
         const roundNumber = index + 1;
         const track = document.getElementById(`championship-round-${roundNumber}-track`)?.value.trim() || '';
-        const vehicle = document.getElementById(`championship-round-${roundNumber}-vehicle`)?.value.trim() || '';
         const localTime = document.getElementById(`championship-round-${roundNumber}-time`)?.value || '';
         return {
           id: existing?.roundPlans?.[index]?.id || `round-${roundNumber}-${Date.now().toString(36)}-${index}`,
@@ -1474,10 +1462,11 @@
           startTime: localTime ? new Date(localTime).toISOString() : ''
         };
       });
-      if (!name || !game || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0) || roundPlans.some(round => !round.track || !round.vehicle || !round.startTime)) {
-        showToast('Enter a series name, valid points, and track, vehicle, and time for every race.', 'error');
+      if (!name || !game || !vehicle || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0) || roundPlans.some(round => !round.track || !round.startTime)) {
+        showToast('Enter a series name, shared vehicle, valid points, and track and time for every race.', 'error');
         return;
       }
+      roundPlans.forEach(round => { round.vehicle = vehicle; });
       const championshipId = existing?.id || `champ-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const nextRoundIds = new Set(roundPlans.map(round => String(round.id)));
       const removedCompletedRound = existing && appState.racesHistory.some(race =>
@@ -1492,6 +1481,7 @@
         id: championshipId,
         name,
         game,
+        vehicle,
         season: document.getElementById('championship-season-input').value.trim(),
         rounds: roundCount,
         roundPlans,
@@ -1510,6 +1500,7 @@
       }
       document.getElementById('create-championship-modal').querySelector('form').reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-vehicle-input').value = '';
       document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-rounds-fields').innerHTML = '';
@@ -1574,7 +1565,7 @@
     }
 
     // ----------------------------------------------------
-    // LOG RACE SUBMISSION & RATING CALCULATOR
+    // LOG RACE SUBMISSION
     // ----------------------------------------------------
     function handleLogRaceSubmit(e) {
       e.preventDefault();
@@ -1584,37 +1575,12 @@
       const selectedChampionship = document.getElementById('modal-championship-input').value || '';
       const championshipId = active?.type === 'event' ? '' : selectedChampionship || (active?.type === 'championship' ? String(active.id) : '');
       const eventId = appState.activeCompetition?.type === 'event' ? String(appState.activeCompetition.id) : '';
-      const carClass = document.getElementById('modal-class-input').value;
+      const carClass = document.getElementById('modal-car-input').value.trim();
       const pos = parseInt(document.getElementById('modal-pos-input').value);
-      const inc = parseInt(document.getElementById('modal-incidents-input').value);
-
-      // Calculations
-      const isWin = pos === 1;
-      const isPodium = pos <= 3;
-      const isClean = inc === 0;
-
-      // XP Delta
-      let xpEarned = Math.max(50, 200 - (pos * 10)) + (isClean ? 50 : 0) + (isWin ? 100 : 0);
-      let ratingDeltaNum = (pos <= 3 ? (4 - pos) * 10 : -((pos - 3) * 4)) + (isClean ? 5 : -inc);
 
       appState.stats.races += 1;
-      if (isWin) appState.stats.wins += 1;
-      if (isPodium) appState.stats.podiums += 1;
-      if (isClean) appState.stats.cleanRaces += 1;
-      appState.stats.totalIncidents += inc;
-
-      // Apply XP
-      appState.driver.xp += xpEarned;
-      if (appState.driver.xp >= appState.driver.nextXp) {
-        appState.driver.level += 1;
-        appState.driver.xp -= appState.driver.nextXp;
-        appState.driver.nextXp = Math.floor(appState.driver.nextXp * 1.25);
-        showToast(`LEVEL UP! You are now Level ${appState.driver.level}`, "success");
-      }
-
-      // Apply Ratings
-      appState.driver.safetyRating = Math.min(300, Math.max(100, appState.driver.safetyRating + (isClean ? 4 : -inc)));
-      appState.driver.skillRating = Math.min(3000, Math.max(1000, appState.driver.skillRating + ratingDeltaNum));
+      if (pos === 1) appState.stats.wins += 1;
+      if (pos <= 3) appState.stats.podiums += 1;
 
       // Add to history
       const entry = {
@@ -1625,12 +1591,11 @@
         eventId,
         track,
         carClass,
-        carModel: '',
+        carModel: carClass,
         startedAt: new Date().toISOString(),
         position: pos,
-        incidents: inc,
-        xp: xpEarned,
-        ratingDelta: (ratingDeltaNum >= 0 ? `+${ratingDeltaNum}` : `${ratingDeltaNum}`)
+        incidents: null,
+        source: 'manual'
       };
       appState.racesHistory.unshift(entry);
       assignCapturedRace(entry);
@@ -1638,81 +1603,60 @@
 
       closeModal('log-race-modal');
       saveState();
-      showToast(`Race result logged! +${xpEarned} XP Earned.`);
+      showToast('Race result logged.');
     }
 
     // ----------------------------------------------------
     // ----------------------------------------------------
     // ----------------------------------------------------
+    function raceCompetitionLabel(race) {
+      if (race.championshipId) {
+        const championship = appState.championships.find(item => String(item.id) === String(race.championshipId));
+        if (championship) return `${championship.name}${race.roundNumber ? ` · R${race.roundNumber}` : ''}`;
+      }
+      if (race.eventId) return appState.events.find(item => String(item.id) === String(race.eventId))?.title || 'Event';
+      return 'Open race';
+    }
+
     function renderApp() {
-      // Driver profile elements
-      document.getElementById('driver-name-display').innerText = appState.driver.name;
-      document.getElementById('driver-title-display').innerText = appState.driver.title;
-      document.getElementById('card-driver-name').innerText = appState.driver.name;
-      document.getElementById('safety-badge-pill').innerText = `S${appState.driver.safetyRating}`;
-      document.getElementById('skill-grade-display').innerText = getSkillGradeLabel(appState.driver.skillRating);
-
-      // Level & XP
-      document.getElementById('driver-level-val').innerText = appState.driver.level;
-      document.getElementById('card-level').innerText = `Lvl ${appState.driver.level}`;
-      document.getElementById('driver-xp-val').innerText = appState.driver.xp.toLocaleString();
-      document.getElementById('driver-next-xp-val').innerText = appState.driver.nextXp.toLocaleString();
-      const xpPct = Math.min(100, Math.floor((appState.driver.xp / appState.driver.nextXp) * 100));
-      document.getElementById('driver-xp-bar').style.width = `${xpPct}%`;
-      document.getElementById('xp-remaining-display').innerText = `${(appState.driver.nextXp - appState.driver.xp).toLocaleString()} XP needed`;
-
       // Stats Grid
       document.getElementById('stat-races').innerText = appState.stats.races;
       document.getElementById('stat-wins').innerText = appState.stats.wins;
       document.getElementById('stat-podiums').innerText = appState.stats.podiums;
       const winPct = appState.stats.races > 0 ? ((appState.stats.wins / appState.stats.races) * 100).toFixed(1) : 0;
       const podPct = appState.stats.races > 0 ? ((appState.stats.podiums / appState.stats.races) * 100).toFixed(1) : 0;
-      const unknownIncidentRaces = appState.racesHistory.filter(race => race.source === 'companion' && (race.incidents === null || race.incidents === undefined)).length;
-      const racesWithIncidentData = Math.max(0, appState.stats.races - unknownIncidentRaces);
-      const cleanPct = racesWithIncidentData > 0 ? ((appState.stats.cleanRaces / racesWithIncidentData) * 100).toFixed(1) : 'N/A';
-      const avgInc = racesWithIncidentData > 0 ? (appState.stats.totalIncidents / racesWithIncidentData).toFixed(1) : 'N/A';
+      const positions = appState.racesHistory.map(race => Number(race.position)).filter(position => Number.isFinite(position) && position > 0);
+      const averageFinish = positions.length ? (positions.reduce((total, position) => total + position, 0) / positions.length).toFixed(1) : 'N/A';
 
       document.getElementById('stat-win-rate').innerText = `${winPct}%`;
       document.getElementById('stat-podium-rate').innerText = `${podPct}%`;
-      document.getElementById('stat-clean-rate').innerText = cleanPct === 'N/A' ? cleanPct : `${cleanPct}%`;
-      document.getElementById('stat-avg-incidents').innerText = avgInc;
-
-      // Ratings
-      document.getElementById('safety-score-num').innerText = appState.driver.safetyRating;
-      document.getElementById('safety-bar').style.width = `${(appState.driver.safetyRating / 300) * 100}%`;
-      document.getElementById('safety-rank-text').innerText = getSafetyRankLabel(appState.driver.safetyRating);
-      document.getElementById('card-safety-rank').innerText = `S${appState.driver.safetyRating}`;
-
-      document.getElementById('skill-score-num').innerText = appState.driver.skillRating.toLocaleString();
-      document.getElementById('skill-bar').style.width = `${Math.min(100, (appState.driver.skillRating / 3000) * 100)}%`;
-      document.getElementById('skill-rank-text').innerText = getSkillGradeLabel(appState.driver.skillRating);
-      document.getElementById('card-skill-rating').innerText = getSkillGradeLabel(appState.driver.skillRating);
+      document.getElementById('stat-average-finish').innerText = averageFinish;
 
       // Recent Activity Table
       const tbody = document.getElementById('recent-races-tbody');
       if (tbody) {
-        tbody.innerHTML = appState.racesHistory.slice(0, 5).map(r => `
+        tbody.innerHTML = appState.racesHistory.slice(0, 10).map(r => `
           <tr class="hover:bg-carbon-800/40 transition-all">
             <td class="p-3 font-mono text-gray-400">${escapeHTML(r.date)}</td>
+            <td class="p-3 text-gray-300">${escapeHTML(raceCompetitionLabel(r))}</td>
+            <td class="p-3 text-gray-300">${escapeHTML(r.game || 'Unknown sim')}</td>
             <td class="p-3 font-bold text-white">${escapeHTML(r.track)}</td>
-            <td class="p-3"><span class="px-2 py-0.5 rounded bg-carbon-800 border border-gray-700 text-neon-cyan">${escapeHTML(r.carClass)}</span></td>
+            <td class="p-3 text-gray-300">${escapeHTML(r.carModel || r.carClass || 'Unknown vehicle')}</td>
             <td class="p-3 font-bold font-mono ${r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">P${r.position}</td>
-            <td class="p-3 font-mono ${r.incidents == null ? 'text-gray-500' : r.incidents === 0 ? 'text-neon-green' : 'text-neon-crimson'}">${r.incidents == null ? 'N/A' : `${r.incidents}x`}</td>
-            <td class="p-3 font-mono text-gray-300">+${r.xp} XP</td>
-            <td class="p-3 font-mono ${String(r.ratingDelta).startsWith('+') ? 'text-neon-green' : 'text-neon-crimson'}">${escapeHTML(r.ratingDelta)}</td>
+            <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : 'Recorded'}</td>
           </tr>
         `).join('');
         if (!appState.racesHistory.length) {
-          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Log your first race to start building your career record.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
         }
       }
 
       // Render Subcomponents
       renderEvents();
+      renderNextScheduledRace();
       renderChampionships();
       renderChampionshipOptions();
       renderActiveCompetition();
-      renderRatingMilestones();
     }
 
     function renderRatingMilestones() {
@@ -1774,6 +1718,7 @@
     // App Initialization on Page Load
     window.onload = function() {
       renderApp();
+      window.setInterval(renderNextScheduledRace, 1000);
       if ('serviceWorker' in navigator && window.isSecureContext) {
         navigator.serviceWorker.register('sw.js').catch(error => {
           console.error("Service worker registration failed:", error);

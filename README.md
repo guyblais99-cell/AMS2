@@ -1,12 +1,12 @@
-# AMS2 Career Hub
+# AMS2 Race Events Hub
 
-An Automobilista 2 career dashboard with race logging, cross-device account sync, championship tracking, and a Windows desktop companion for race uploads.
+An Automobilista 2 race-events dashboard for planning championships, tracking race results, and syncing SimHub captures.
 
 ## Dashboard
 
 Serve the repository root with a static host such as Vercel, or open `index.html` for local-only use. Sign-in and cloud sync require the Firebase settings in `firebase-config.js`, Firebase Email/Password Authentication, and Realtime Database.
 
-The dashboard tracks total races, wins, podiums, career ratings, race history, scheduled events, and championships with custom points. When creating a championship, set the round count and enter each round's planned track, vehicle/class, and local date/time. Track and vehicle fields suggest values already seen in your history; the search field filters championships by series, round track, or vehicle. The race calendar combines single events and championship rounds in chronological order and highlights the next upcoming item. Use the **Active competition** selector for a manual override. Race results captured while monitoring is active are matched to uncompleted rounds by detected track and vehicle/class, using race start time to distinguish repeated rounds. Mismatches remain visible on the championship/event card for confirmation in the HTML app. Races from the SimHub bridge include game, track, car model/class, and finish position; incident counts are not captured.
+The dashboard focuses on total races, wins, podiums, average finish, race history, scheduled events, and championships with custom points. Each championship uses one shared vehicle/class, plus a planned track and local time slot for every round. Track and vehicle fields suggest values already seen in your history; the search field filters championships by series, round track, or vehicle. The existing dashboard next-race widget shows the earliest upcoming item and opens the full chronological calendar. The calendar combines single events and championship rounds. Use the **Active competition** selector for a manual override. Race results captured while monitoring is active are matched to uncompleted rounds by detected track and the shared championship vehicle, using race start time to distinguish repeated rounds. Mismatches remain visible on the championship/event card for confirmation in the HTML app. Races from the SimHub bridge include game, track, car model/class, and finish position; incident counts are not captured.
 
 Restrict Realtime Database access to the signed-in account owner. A minimal ruleset for this app is:
 
@@ -45,7 +45,7 @@ python companion/tracker.py
 
 The plugin exposes SimHub's normalized game, session, track, car model/class, and position data on `127.0.0.1:17891`. The companion watches for race sessions and uploads their final position to the signed-in user's Firebase inbox, tagged with the active championship or event. Keep the companion open and monitoring during the session. Scheduled championship rounds and single events enabled with **Auto-activation on** activate ten minutes before their start time. A manual dashboard selection overrides calendar activation; clear it to let the schedule choose the active item. Calendar changes are picked up while monitoring. A race stays tagged to the competition active when the race began. The dashboard attaches exact track/vehicle matches to planned rounds. If telemetry differs, the result remains in the competition with a **Needs confirmation** action; confirming an unplanned result can add it as an extra round. The active selection is the explicit multiplayer marker; this avoids mistaking offline AI fields for proof of an online lobby.
 
-The SimHub bridge does not capture incident counts. The dashboard displays incident statistics only for records that actually include incident data.
+The SimHub bridge does not capture incident counts.
 
 ## Hosting and Offline Use
 
