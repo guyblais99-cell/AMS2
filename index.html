@@ -112,6 +112,9 @@
         <button onclick="switchTab('career')" id="nav-career" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-trophy"></i> Career & Ladder
         </button>
+        <button onclick="switchTab('championships')" id="nav-championships" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
+          <i class="fa-solid fa-ranking-star"></i> Championships
+        </button>
         <button onclick="switchTab('events')" id="nav-events" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-calendar-days"></i> Race Calendar
         </button>
@@ -481,7 +484,19 @@
     </section>
 
 
-    <!-- TAB 3: MULTIPLAYER RACE SCHEDULER & CALENDAR -->
+    <!-- CHAMPIONSHIPS -->
+    <section id="tab-championships" class="tab-content hidden space-y-6">
+      <div class="carbon-card rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold text-white flex items-center gap-3"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Championships</h2>
+          <p class="text-xs text-gray-400">Keep league and SimGrid series results separate from your career totals.</p>
+        </div>
+        <button onclick="openModal('create-championship-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase hover:bg-cyan-300 flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Championship</button>
+      </div>
+      <div id="championships-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- TAB 4: MULTIPLAYER RACE SCHEDULER & CALENDAR -->
     <section id="tab-events" class="tab-content hidden space-y-6">
       
       <!-- Events Header -->
@@ -547,6 +562,11 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
+          <label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input type="text" id="modal-game-input" value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+          <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship</span><select id="modal-championship-input" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan"><option value="">Career race (not in a championship)</option></select></label>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-gray-300 font-semibold mb-1">Vehicle Class</label>
             <select id="modal-class-input" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan">
@@ -579,6 +599,19 @@
           <button type="button" onclick="closeModal('log-race-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
           <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Calculate & Save</button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="create-championship-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3"><h3 class="text-lg font-bold text-white"><i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>Create Championship</h3><button onclick="closeModal('create-championship-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+      <form onsubmit="handleCreateChampionship(event)" class="space-y-4 text-xs">
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Rounds</span><input id="championship-rounds-input" type="number" min="1" max="100" value="6" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish (comma separated)</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
+        <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
       </form>
     </div>
   </div>
@@ -736,7 +769,9 @@
         totalIncidents: 0,
       },
       racesHistory: [],
-      events: []
+      events: [],
+      championships: [],
+      companionRaceIds: []
     };
 
     function cloneDefaultState() {
@@ -771,6 +806,10 @@
     function replaceState(next, notify = false) {
       const defaults = cloneDefaultState();
       appState = { ...defaults, ...next, driver: { ...defaults.driver, ...next.driver }, stats: { ...defaults.stats, ...next.stats } };
+      appState.racesHistory = Array.isArray(appState.racesHistory) ? appState.racesHistory : [];
+      appState.events = Array.isArray(appState.events) ? appState.events : [];
+      appState.championships = Array.isArray(appState.championships) ? appState.championships : [];
+      appState.companionRaceIds = Array.isArray(appState.companionRaceIds) ? appState.companionRaceIds : [];
       try { localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState)); } catch (error) { console.error(error); }
       renderApp();
     }
@@ -976,12 +1015,126 @@
       }
     }
 
+    function renderChampionshipOptions() {
+      const select = document.getElementById('modal-championship-input');
+      if (!select) return;
+      const selected = select.value;
+      select.innerHTML = '<option value="">Career race (not in a championship)</option>' + appState.championships.map(championship =>
+        `<option value="${escapeHTML(championship.id)}">${escapeHTML(championship.name)}${championship.season ? ` - ${escapeHTML(championship.season)}` : ''}</option>`
+      ).join('');
+      if (appState.championships.some(championship => String(championship.id) === selected)) select.value = selected;
+    }
+
+    function championshipPoints(championship, position) {
+      const points = Array.isArray(championship.points) ? championship.points : [];
+      return points[position - 1] || 0;
+    }
+
+    function renderChampionships() {
+      const container = document.getElementById('championships-grid');
+      if (!container) return;
+      if (!appState.championships.length) {
+        container.innerHTML = '<div class="carbon-card rounded-xl p-6 text-sm text-gray-400 md:col-span-2 xl:col-span-3">No championships yet. Create a series, then assign race results to it.</div>';
+        return;
+      }
+      container.innerHTML = appState.championships.map(championship => {
+        const races = appState.racesHistory.filter(race => String(race.championshipId || '') === String(championship.id)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        const points = races.reduce((total, race) => total + championshipPoints(championship, Number(race.position) || 0), 0);
+        const wins = races.filter(race => Number(race.position) === 1).length;
+        const podiums = races.filter(race => Number(race.position) <= 3).length;
+        const incidents = races.reduce((total, race) => total + (Number(race.incidents) || 0), 0);
+        const average = races.length ? (incidents / races.length).toFixed(1) : '0.0';
+        return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
+          <div class="flex justify-between gap-3"><div><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><span class="text-xs font-mono text-neon-cyan">${races.length}/${Number(championship.rounds) || 0} rounds</span></div>
+          <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
+          <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
+          <div class="space-y-2">${races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 text-xs border-t border-gray-800 pt-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-xs text-gray-500">No rounds recorded yet.</p>'}</div>
+        </article>`;
+      }).join('');
+    }
+
+    function handleCreateChampionship(event) {
+      event.preventDefault();
+      const name = document.getElementById('championship-name-input').value.trim();
+      const game = document.getElementById('championship-game-input').value.trim();
+      const rawPoints = document.getElementById('championship-points-input').value.split(',').map(value => Number(value.trim()));
+      if (!name || !game || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0)) {
+        showToast('Enter a name, game, and valid non-negative points list.', 'error');
+        return;
+      }
+      appState.championships.unshift({
+        id: `champ-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        name,
+        game,
+        season: document.getElementById('championship-season-input').value.trim(),
+        rounds: Number(document.getElementById('championship-rounds-input').value) || 1,
+        points: rawPoints,
+        createdAt: new Date().toISOString()
+      });
+      document.getElementById('create-championship-modal').querySelector('form').reset();
+      document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
+      document.getElementById('championship-rounds-input').value = '6';
+      closeModal('create-championship-modal');
+      saveState();
+      showToast(`Championship "${name}" created.`);
+    }
+
+    function importCompanionRaces(inbox) {
+      if (!inbox || typeof inbox !== 'object') return [];
+      const known = new Set(appState.companionRaceIds.map(String));
+      const importedIds = [];
+      for (const [id, race] of Object.entries(inbox)) {
+        if (known.has(String(id)) || !race || typeof race !== 'object') continue;
+        const position = Number(race.position);
+        if (!Number.isInteger(position) || position < 1 || position > 99) continue;
+        const incidents = Math.max(0, Number(race.incidents) || 0);
+        appState.racesHistory.unshift({
+          ...race,
+          id: String(race.id || id),
+          date: race.date || new Date().toISOString().slice(0, 10),
+          game: race.game || 'Unknown sim',
+          track: race.track || 'Unknown track',
+          carClass: race.carClass || race.car || 'Unknown class',
+          position,
+          incidents,
+          xp: Number(race.xp) || 0,
+          ratingDelta: race.ratingDelta || 'Telemetry',
+          source: 'companion'
+        });
+        appState.stats.races += 1;
+        if (position === 1) appState.stats.wins += 1;
+        if (position <= 3) appState.stats.podiums += 1;
+        if (incidents === 0) appState.stats.cleanRaces += 1;
+        appState.stats.totalIncidents += incidents;
+        appState.companionRaceIds.push(String(id));
+        known.add(String(id));
+        importedIds.push(String(id));
+      }
+      if (!importedIds.length) return [];
+      appState.racesHistory = appState.racesHistory.slice(0, 1000);
+      appState.companionRaceIds = appState.companionRaceIds.slice(-5000);
+      saveState();
+      showToast(`${importedIds.length} companion race${importedIds.length === 1 ? '' : 's'} synced.`);
+      return importedIds;
+    }
+
+    function applyCloudState(cloudState) {
+      const remote = cloudState && typeof cloudState === 'object' ? { ...cloudState } : {};
+      const inbox = remote.companionRaces || {};
+      delete remote.companionRaces;
+      replaceState(remote);
+      return importCompanionRaces(inbox);
+    }
+
     // ----------------------------------------------------
     // LOG RACE SUBMISSION & RATING CALCULATOR
     // ----------------------------------------------------
     function handleLogRaceSubmit(e) {
       e.preventDefault();
       const track = document.getElementById('modal-track-input').value;
+      const game = document.getElementById('modal-game-input').value.trim() || 'Unknown sim';
+      const championshipId = document.getElementById('modal-championship-input').value || '';
       const carClass = document.getElementById('modal-class-input').value;
       const pos = parseInt(document.getElementById('modal-pos-input').value);
       const inc = parseInt(document.getElementById('modal-incidents-input').value);
@@ -1018,6 +1171,8 @@
       appState.racesHistory.unshift({
         id: Date.now(),
         date: new Date().toISOString().split('T')[0],
+        game,
+        championshipId,
         track,
         carClass,
         position: pos,
@@ -1100,6 +1255,8 @@
       renderCareerTiers();
       renderTrophies();
       renderEvents();
+      renderChampionships();
+      renderChampionshipOptions();
       renderRatingMilestones();
     }
 
@@ -1224,7 +1381,7 @@
         form.onsubmit = e => { e.preventDefault(); $('auth-signin').click(); };
 
         window.appSignOut = async () => {
-          if (timer) { clearTimeout(timer); timer = null; if (ref) await F.set(ref, JSON.parse(JSON.stringify(appState))).catch(console.error); }
+          if (timer) { clearTimeout(timer); timer = null; if (ref) await F.update(ref, JSON.parse(JSON.stringify(appState))).catch(console.error); }
           await A.signOut(auth);
         };
 
@@ -1233,11 +1390,22 @@
           clearTimeout(timer);
           timer = setTimeout(() => {
             timer = null;
-            F.set(ref, JSON.parse(JSON.stringify(state))).catch(e => {
+            F.update(ref, JSON.parse(JSON.stringify(state))).catch(e => {
               console.error(e);
               showToast('Cloud sync failed. Changes are saved on this device.', 'error');
             });
           }, 600);
+        };
+
+        window.ackImportedRaces = (state, ids) => {
+          if (!ref || !ids.length) return;
+          if (timer) { clearTimeout(timer); timer = null; }
+          const updates = JSON.parse(JSON.stringify(state));
+          for (const id of ids) updates[`companionRaces/${id}`] = null;
+          F.update(ref, updates).catch(e => {
+            console.error(e);
+            showToast('Race imported locally but cloud acknowledgement failed.', 'error');
+          });
         };
 
         const setSignedIn = user => {
@@ -1261,7 +1429,10 @@
           ref = F.ref(db, 'ams2Hub/' + user.uid);
           try {
             const snap = await F.get(ref);
-            if (snap.exists()) replaceState(snap.val());
+            if (snap.exists()) {
+              const imported = applyCloudState(snap.val());
+              if (imported.length) window.ackImportedRaces?.(appState, imported);
+            }
             else await F.set(ref, JSON.parse(JSON.stringify(appState)));
           } catch (e) {
             console.error(e);
@@ -1270,8 +1441,10 @@
           setSignedIn(user);
           unsub = F.onValue(ref, s => {
             if (!s.exists() || timer) return;
+            let imported = [];
             applyingRemote = true;
-            try { replaceState(s.val()); } finally { applyingRemote = false; }
+            try { imported = applyCloudState(s.val()); } finally { applyingRemote = false; }
+            if (imported.length) window.ackImportedRaces?.(appState, imported);
           });
         });
       } catch (e) {
