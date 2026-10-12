@@ -72,6 +72,49 @@
     .pulse-glow {
       animation: pulseGlow 2s infinite ease-in-out;
     }
+
+    #create-championship-modal {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #create-championship-modal > .carbon-card {
+      box-sizing: border-box;
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    #events-grid-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .calendar-agenda-row {
+      display: grid;
+      grid-template-columns: 9rem minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 0.75rem 1rem;
+    }
+
+    .calendar-agenda-status {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .calendar-agenda-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .calendar-agenda-status {
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-neon-cyan selection:text-black">
@@ -109,9 +152,6 @@
         <button onclick="switchTab('dashboard')" id="nav-dashboard" class="tab-btn active px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 transition-all text-neon-cyan bg-carbon-700/80 border border-neon-cyan/20">
           <i class="fa-solid fa-gauge-high"></i> Dashboard
         </button>
-        <button onclick="switchTab('career')" id="nav-career" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
-          <i class="fa-solid fa-trophy"></i> Career & Ladder
-        </button>
         <button onclick="switchTab('championships')" id="nav-championships" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-ranking-star"></i> Championships
         </button>
@@ -137,7 +177,7 @@
   <!-- MAIN APP CONTENT WRAPPER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
     <section class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 border border-neon-cyan/25" aria-label="Active competition">
-      <div class="flex-1 min-w-0"><h2 class="text-sm font-bold text-white">Active competition</h2><p id="active-competition-status" class="text-xs text-gray-400">Race capture is paused until you select a championship or event.</p></div>
+      <div class="flex-1 min-w-0"><h2 class="text-sm font-bold text-white">Active competition</h2><p id="active-competition-status" class="text-xs text-gray-400">No manual selection. Scheduled items auto-activate 10 minutes before start while the companion is monitoring.</p></div>
       <select id="active-competition-select" onchange="setActiveCompetition(this.value)" class="w-full sm:w-auto sm:min-w-64 bg-carbon-900 text-white p-2.5 rounded-lg border border-gray-800 focus:outline-none focus:border-neon-cyan" aria-label="Select active competition"><option value="">No active competition</option></select>
     </section>
 
@@ -495,7 +535,7 @@
           <h2 class="text-2xl font-extrabold text-white flex items-center gap-3"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Championships</h2>
           <p class="text-xs text-gray-400">Keep league and SimGrid series results separate from your career totals.</p>
         </div>
-        <button onclick="openModal('create-championship-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase hover:bg-cyan-300 flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Championship</button>
+        <button onclick="startNewChampionship()" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase hover:bg-cyan-300 flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Championship</button>
       </div>
       <div class="carbon-card rounded-xl p-4 flex items-center gap-3">
         <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
@@ -513,12 +553,14 @@
           <h2 class="text-2xl font-extrabold text-white flex items-center gap-3">
             <i class="fa-solid fa-calendar-check text-neon-cyan"></i> Race Scheduler & Community Event Hub
           </h2>
-          <p class="text-xs text-gray-400">Plan and track your own AMS2 sessions.</p>
+          <p class="text-xs text-gray-400">Single events and championship rounds, ordered by start time.</p>
         </div>
         <button onclick="openModal('create-event-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase tracking-wider hover:bg-cyan-300 transition-all flex items-center gap-2 shadow-lg shadow-neon-cyan/20">
           <i class="fa-solid fa-calendar-plus text-sm"></i> Schedule Custom Event
         </button>
       </div>
+
+      <div id="next-event-highlight"></div>
 
       <!-- Filter Bar -->
       <div class="carbon-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
@@ -539,7 +581,7 @@
       </div>
 
       <!-- Scheduled Events List & Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="events-grid-container">
+      <div class="space-y-2" id="events-grid-container">
         <!-- Event Cards Injected dynamically via JS -->
       </div>
 
@@ -613,14 +655,14 @@
 
   <div id="create-championship-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-gray-800 pb-3"><h3 class="text-lg font-bold text-white"><i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>Create Championship</h3><button onclick="closeModal('create-championship-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3"><h3 id="championship-modal-title" class="text-lg font-bold text-white"><i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>Create Championship</h3><button onclick="closeModal('create-championship-modal')" class="text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="handleCreateChampionship(event)" class="space-y-4 text-xs">
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="block text-gray-500 mt-1">Comma-separated, e.g. 25,18,15,12,10</span></label></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
-        <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
+        <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button id="championship-save-button" type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
       </form>
     </div>
   </div>
@@ -802,6 +844,8 @@
     }
 
     let appState = readLocalState();
+    let editingChampionshipId = null;
+    let championshipRoundDraft = [];
     function saveState() {
       renderApp();
       try {
@@ -872,6 +916,13 @@
         activeBtn.classList.add('text-neon-cyan', 'bg-carbon-700/80', 'border', 'border-neon-cyan/20');
         activeBtn.classList.remove('text-gray-400');
       }
+    }
+
+    function toLocalDateTimeInput(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (!Number.isFinite(date.getTime())) return '';
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     }
 
     // ----------------------------------------------------
@@ -974,54 +1025,72 @@
       const container = document.getElementById('events-grid-container');
       if (!container) return;
 
-      const searchTerm = (document.getElementById('event-search-input')?.value || '').toLowerCase();
+      const searchTerm = (document.getElementById('event-search-input')?.value || '').trim().toLowerCase();
       const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
+      const now = Date.now();
+      const entries = [
+        ...appState.events.map(event => {
+          const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id));
+          return {
+            type: 'event', id: String(event.id), title: event.title, track: event.track, vehicle: event.carClass,
+            startTime: event.startTime, scheduled: Boolean(event.scheduled), duration: event.duration,
+            result, event
+          };
+        }),
+        ...appState.championships.flatMap(championship => championshipRoundPlans(championship).map(round => ({
+          type: 'championship', id: String(championship.id), roundId: String(round.id),
+          title: `${championship.name} · Round ${round.roundNumber}`, track: round.track, vehicle: round.vehicle,
+          startTime: round.startTime, scheduled: true,
+          result: appState.racesHistory.find(race => String(race.roundId || '') === String(round.id)),
+          championship
+        })))
+      ].map(entry => ({ ...entry, timestamp: new Date(entry.startTime).getTime() }))
+        .sort((left, right) => {
+          const leftTime = Number.isFinite(left.timestamp) ? left.timestamp : Number.MAX_SAFE_INTEGER;
+          const rightTime = Number.isFinite(right.timestamp) ? right.timestamp : Number.MAX_SAFE_INTEGER;
+          return leftTime - rightTime || left.title.localeCompare(right.title);
+        });
 
-      const filtered = appState.events.filter(ev => {
-        const matchesSearch = ev.title.toLowerCase().includes(searchTerm) || ev.track.toLowerCase().includes(searchTerm);
-        const matchesClass = filterClass === 'ALL' || ev.carClass.includes(filterClass);
-        return matchesSearch && matchesClass;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<p class="text-sm text-gray-400 col-span-full">${appState.events.length ? 'No events match these filters.' : 'No scheduled events yet. Create an event to add it to your career calendar.'}</p>`;
-        return;
+      const nextEntry = entries.find(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
+      const active = appState.activeCompetition;
+      const activeEntry = entries.find(entry => active?.source === 'schedule' && active.type === entry.type && String(active.id) === entry.id &&
+        (entry.type !== 'championship' || String(active.roundId || '') === entry.roundId));
+      const highlight = document.getElementById('next-event-highlight');
+      if (highlight) {
+        const focus = activeEntry || nextEntry;
+        highlight.innerHTML = focus
+          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? 'border-neon-amber/40' : 'border-neon-cyan/30'}"><div><p class="text-[10px] font-mono uppercase ${activeEntry ? 'text-neon-amber' : 'text-neon-cyan'}">${activeEntry ? 'Currently active' : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} · ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</time></div>`
+          : '<div class="carbon-card rounded-xl px-4 py-3 text-sm text-gray-400">No upcoming events or championship rounds.</div>';
       }
 
-      container.innerHTML = filtered.map(ev => {
-        const isActive = appState.activeCompetition?.type === 'event' && String(appState.activeCompetition.id) === String(ev.id);
-        const eventRaces = appState.racesHistory.filter(race => String(race.eventId || '') === String(ev.id)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
-        return `
-        <div class="carbon-card rounded-2xl p-5 space-y-4 flex flex-col justify-between">
-          <div class="space-y-2">
-            <div class="flex justify-between items-start">
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/20">${escapeHTML(ev.carClass)}</span>
-              <span class="text-[10px] text-gray-400 font-mono"><i class="fa-solid fa-clock"></i> ${escapeHTML(ev.duration)}</span>
-            </div>
-            <h4 class="text-base font-bold text-white">${escapeHTML(ev.title)}</h4>
-            <p class="text-xs text-gray-400 flex items-center gap-1"><i class="fa-solid fa-location-dot text-neon-crimson"></i> ${escapeHTML(ev.track)}</p>
-          </div>
-
-          <div class="space-y-3 pt-2 border-t border-gray-800">
-            <div class="flex justify-between text-[11px] text-gray-400 font-mono">
-              <span>Start Time:</span>
-              <span class="text-white">${escapeHTML(new Date(ev.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span>
-            </div>
-            <div class="border-t border-gray-800 pt-2 space-y-1">
-              <div class="flex justify-between text-[11px] text-gray-400"><span>Captured results</span><span class="text-white">${eventRaces.length}</span></div>
-              ${eventRaces.map(race => `<div class="border-t border-gray-800 pt-1 text-[11px]"><div class="flex justify-between gap-2 text-gray-300"><span class="truncate">${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')} · P${Number(race.position) || '-'}</span><span>${escapeHTML(race.date || '')}</span></div>${race.needsReview ? `<div class="mt-1 flex flex-col sm:flex-row justify-between gap-1 text-neon-amber"><span>Planned ${escapeHTML(ev.track)} · ${escapeHTML(ev.carClass)}; detected ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}</span><button onclick="confirmCapturedRace('${String(race.id)}','event','${String(ev.id)}')" class="shrink-0 underline text-left">Confirm event</button></div>` : ''}</div>`).join('')}
-            </div>
-
-            <button onclick="toggleScheduleEvent(${Number.isSafeInteger(ev.id) ? ev.id : 0})" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${ev.scheduled ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
-              <i class="fa-solid ${ev.scheduled ? 'fa-check' : 'fa-calendar-plus'}"></i>
-              ${ev.scheduled ? 'Scheduled on Calendar' : 'Schedule Event'}
-            </button>
-            <button onclick="setActiveCompetition('event:${Number.isSafeInteger(ev.id) ? ev.id : 0}')" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isActive ? 'bg-neon-amber/20 text-neon-amber border border-neon-amber/40' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
-              <i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-flag-checkered'}"></i> ${isActive ? 'Active capture event' : 'Set as active event'}
-            </button>
-          </div>
-        </div>
-      `;
+      const filtered = entries.filter(entry => {
+        const matchesSearch = `${entry.title} ${entry.track} ${entry.vehicle}`.toLowerCase().includes(searchTerm);
+        const matchesClass = filterClass === 'ALL' || String(entry.vehicle || '').includes(filterClass);
+        return matchesSearch && matchesClass;
+      });
+      if (!filtered.length) {
+        container.innerHTML = entries.length
+          ? '<p class="text-sm text-gray-400">No calendar items match these filters.</p>'
+          : '<p class="text-sm text-gray-400">No events or championship rounds yet.</p>';
+        return;
+      }
+      container.innerHTML = filtered.map(entry => {
+        const isActive = active?.type === entry.type && String(active.id) === entry.id &&
+          (entry.type !== 'championship' || (active.source === 'schedule' && String(active.roundId || '') === entry.roundId));
+        const isNext = nextEntry === entry;
+        const review = Boolean(entry.result?.needsReview);
+        const status = review ? 'Needs confirmation' : entry.result ? `Completed · P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
+        const when = Number.isFinite(entry.timestamp)
+          ? new Date(entry.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : 'Time not set';
+        const actions = entry.type === 'event'
+          ? `<button onclick="toggleScheduleEvent(${Number(entry.id) || 0})" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${entry.scheduled ? 'bg-neon-green/15 text-neon-green border border-neon-green/30' : 'bg-carbon-700 text-gray-300 border border-gray-700'}">${entry.scheduled ? 'Auto-activation on' : 'Enable auto-activation'}</button>`
+          : '';
+        return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isNext ? 'border-neon-cyan/50' : ''}">
+          <time class="calendar-agenda-time text-xs font-mono text-gray-400">${escapeHTML(when)}</time>
+          <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] text-neon-amber font-bold">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} · ${escapeHTML(entry.vehicle)}</p></div>
+          <div class="calendar-agenda-status"><span class="text-[11px] ${review ? 'text-neon-amber' : entry.result ? 'text-neon-green' : 'text-gray-400'}">${status}</span>${actions}</div>
+        </article>`;
       }).join('');
     }
 
@@ -1096,8 +1165,10 @@
         select.value = '';
       }
       status.textContent = appState.activeCompetition
-        ? `Race results will be captured for ${appState.activeCompetition.name}.`
-        : 'Race capture is paused until you select a championship or event.';
+        ? appState.activeCompetition.source === 'schedule'
+          ? `Automatically activated from the calendar: ${appState.activeCompetition.name}.`
+          : `Race results will be captured for ${appState.activeCompetition.name}.`
+        : 'No manual selection. Scheduled items auto-activate 10 minutes before start while the companion is monitoring.';
     }
 
     function setActiveCompetition(value) {
@@ -1109,7 +1180,7 @@
         const id = value.slice(separator + 1);
         const list = type === 'championship' ? appState.championships : type === 'event' ? appState.events : [];
         const item = list.find(candidate => String(candidate.id) === id);
-        appState.activeCompetition = item ? { type, id, name: type === 'event' ? item.title : item.name } : null;
+        appState.activeCompetition = item ? { type, id, name: type === 'event' ? item.title : item.name, source: 'manual' } : null;
       }
       saveState();
       showToast(appState.activeCompetition ? `Active competition: ${appState.activeCompetition.name}` : 'Race capture paused.');
@@ -1257,7 +1328,7 @@
       const vehicleOptions = [...knownVehicles].sort((a, b) => String(a).localeCompare(String(b))).map(value => `<option value="${escapeHTML(value)}"></option>`).join('');
       container.innerHTML = Array.from({ length: count }, (_, index) => {
         const roundNumber = index + 1;
-        const previous = currentValues[index] || {};
+        const previous = currentValues[index] || championshipRoundDraft[index] || {};
         return `<div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3 space-y-2">
           <h4 class="text-xs font-bold text-neon-cyan">Race ${roundNumber}</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1313,7 +1384,7 @@
           `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
         ).join('');
         return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
-          <div class="flex justify-between gap-3"><div><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)} rounds</span></div>
+          <div class="flex justify-between gap-3"><div class="min-w-0"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><div class="flex items-start gap-2 shrink-0"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
           <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
@@ -1322,8 +1393,70 @@
       }).join('');
     }
 
+    function setChampionshipModalMode(isEditing) {
+      document.getElementById('championship-modal-title').innerHTML = `<i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>${isEditing ? 'Edit Championship' : 'Create Championship'}`;
+      document.getElementById('championship-save-button').textContent = isEditing ? 'Save Changes' : 'Create Series';
+    }
+
+    function startNewChampionship() {
+      editingChampionshipId = null;
+      championshipRoundDraft = [];
+      const form = document.getElementById('create-championship-modal').querySelector('form');
+      form.reset();
+      document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-rounds-input').value = '6';
+      document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
+      document.getElementById('championship-rounds-fields').innerHTML = '';
+      setChampionshipModalMode(false);
+      renderChampionshipRoundInputs();
+      openModal('create-championship-modal');
+    }
+
+    function editChampionship(championshipId) {
+      const championship = appState.championships.find(item => String(item.id) === String(championshipId));
+      if (!championship) return;
+      editingChampionshipId = String(championship.id);
+      championshipRoundDraft = championshipRoundPlans(championship).map(round => ({
+        ...round,
+        startTime: toLocalDateTimeInput(round.startTime)
+      }));
+      document.getElementById('championship-name-input').value = championship.name || '';
+      document.getElementById('championship-game-input').value = championship.game || 'Automobilista 2';
+      document.getElementById('championship-season-input').value = championship.season || '';
+      document.getElementById('championship-rounds-input').value = championshipRoundCount(championship) || 1;
+      document.getElementById('championship-points-input').value = (championship.points || []).join(',') || '25,18,15,12,10,8,6,4,2,1';
+      document.getElementById('championship-rounds-fields').innerHTML = '';
+      setChampionshipModalMode(true);
+      renderChampionshipRoundInputs();
+      openModal('create-championship-modal');
+    }
+
+    function deleteChampionship(championshipId) {
+      const championship = appState.championships.find(item => String(item.id) === String(championshipId));
+      if (!championship) return;
+      const linkedRaces = appState.racesHistory.filter(race => String(race.championshipId || '') === String(championship.id));
+      const note = linkedRaces.length
+        ? ` ${linkedRaces.length} race result(s) will remain in career history but be detached from the series.`
+        : '';
+      if (!window.confirm(`Delete "${championship.name}"?${note}`)) return;
+      appState.championships = appState.championships.filter(item => String(item.id) !== String(championship.id));
+      for (const race of linkedRaces) {
+        race.championshipId = '';
+        delete race.roundId;
+        delete race.roundNumber;
+      }
+      if (appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(championship.id)) {
+        appState.activeCompetition = null;
+      }
+      saveState();
+      showToast(`Championship "${championship.name}" deleted.`);
+    }
+
     function handleCreateChampionship(event) {
       event.preventDefault();
+      const existing = editingChampionshipId
+        ? appState.championships.find(item => String(item.id) === String(editingChampionshipId))
+        : null;
       const name = document.getElementById('championship-name-input').value.trim();
       const game = document.getElementById('championship-game-input').value.trim();
       const rawPoints = document.getElementById('championship-points-input').value.split(',').map(value => Number(value.trim()));
@@ -1334,7 +1467,7 @@
         const vehicle = document.getElementById(`championship-round-${roundNumber}-vehicle`)?.value.trim() || '';
         const localTime = document.getElementById(`championship-round-${roundNumber}-time`)?.value || '';
         return {
-          id: `round-${roundNumber}-${Date.now().toString(36)}`,
+          id: existing?.roundPlans?.[index]?.id || `round-${roundNumber}-${Date.now().toString(36)}-${index}`,
           roundNumber,
           track,
           vehicle,
@@ -1345,25 +1478,48 @@
         showToast('Enter a series name, valid points, and track, vehicle, and time for every race.', 'error');
         return;
       }
-      appState.championships.unshift({
-        id: `champ-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      const championshipId = existing?.id || `champ-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const nextRoundIds = new Set(roundPlans.map(round => String(round.id)));
+      const removedCompletedRound = existing && appState.racesHistory.some(race =>
+        String(race.championshipId || '') === String(existing.id) && race.roundId && !nextRoundIds.has(String(race.roundId))
+      );
+      if (removedCompletedRound) {
+        showToast('A race with a recorded result cannot be removed from the championship.', 'error');
+        return;
+      }
+      const updatedChampionship = {
+        ...(existing || {}),
+        id: championshipId,
         name,
         game,
         season: document.getElementById('championship-season-input').value.trim(),
         rounds: roundCount,
         roundPlans,
         points: rawPoints,
-        createdAt: new Date().toISOString()
-      });
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      if (existing) {
+        const index = appState.championships.findIndex(item => String(item.id) === String(existing.id));
+        appState.championships[index] = updatedChampionship;
+        if (appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(existing.id)) {
+          appState.activeCompetition.name = `${name}${updatedChampionship.season ? ` - ${updatedChampionship.season}` : ''}`;
+        }
+      } else {
+        appState.championships.unshift(updatedChampionship);
+      }
       document.getElementById('create-championship-modal').querySelector('form').reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
       document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-rounds-fields').innerHTML = '';
+      editingChampionshipId = null;
+      championshipRoundDraft = [];
+      setChampionshipModalMode(false);
       renderChampionshipRoundInputs();
       closeModal('create-championship-modal');
       saveState();
-      showToast(`Championship "${name}" created.`);
+      showToast(existing ? `Championship "${name}" updated.` : `Championship "${name}" created.`);
     }
 
     function importCompanionRaces(inbox) {
@@ -1552,8 +1708,6 @@
       }
 
       // Render Subcomponents
-      renderCareerTiers();
-      renderTrophies();
       renderEvents();
       renderChampionships();
       renderChampionshipOptions();

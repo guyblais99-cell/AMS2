@@ -8,7 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -17,6 +17,8 @@ from tkinter import messagebox, ttk
 APP_NAME = "AMS2 Career Hub Companion"
 POLL_SECONDS = 1.5
 ACTIVE_COMPETITION_SYNC_SECONDS = 3
+SCHEDULE_REFRESH_SECONDS = 30
+AUTO_ACTIVATION_LEAD = timedelta(minutes=10)
 SIMHUB_TELEMETRY_URL = "http://127.0.0.1:17891/telemetry"
 CONFIG_FILE = Path(os.environ.get("APPDATA", Path.home())) / "AMS2CareerHub" / "companion.json"
 WEB_CONFIG_FILE = Path(__file__).resolve().parents[1] / "firebase-config.js"
@@ -39,7 +41,7 @@ def read_firebase_config():
 
 
 def request_json(url, payload=None, method=None):
-    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    body = json.dumps(payload).encode("utf-8") if payload is not None or method in {"POST", "PUT", "PATCH"} else None
     request = urllib.request.Request(url, data=body, method=method,
                                      headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(request, timeout=8) as response:
@@ -63,11 +65,75 @@ def firebase_database_url(database_url, path, id_token):
 def normalize_active_competition(value):
     if not isinstance(value, dict) or value.get("type") not in {"championship", "event"} or value.get("id") is None:
         return None
-    return {
+    normalized = {
         "type": value["type"],
         "id": str(value["id"]),
         "name": str(value.get("name") or "Active competition"),
+        "source": value.get("source") or "manual",
     }
+    for key in ("roundId", "roundNumber", "startTime"):
+        if value.get(key) is not None:
+            normalized[key] = value[key]
+    return normalized
+
+
+def parse_schedule_time(value):
+    try:
+        date = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if date.tzinfo is None:
+            date = date.astimezone()
+        return date.astimezone(timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def rows_from_firebase(value):
+    if isinstance(value, dict):
+        return [row for row in value.values() if isinstance(row, dict)]
+    if isinstance(value, list):
+        return [row for row in value if isinstance(row, dict)]
+    return []
+
+
+def scheduled_active_competition(events, championships, now=None):
+    now = now or datetime.now(timezone.utc)
+    candidates = []
+    for event in rows_from_firebase(events):
+        if not event.get("scheduled"):
+            continue
+        start = parse_schedule_time(event.get("startTime"))
+        if not start:
+            continue
+        duration_match = re.search(r"\d+", str(event.get("duration", "45")))
+        duration_minutes = int(duration_match.group()) if duration_match else 45
+        end = start + timedelta(minutes=max(5, duration_minutes) + 30)
+        if start - AUTO_ACTIVATION_LEAD <= now <= end:
+            candidates.append((start, {"type": "event", "id": str(event.get("id", "")),
+                                       "name": str(event.get("title") or "Scheduled event"),
+                                       "source": "schedule", "startTime": start.isoformat()}))
+
+    for championship in rows_from_firebase(championships):
+        for round_plan in rows_from_firebase(championship.get("roundPlans")):
+            start = parse_schedule_time(round_plan.get("startTime"))
+            if not start or not (start - AUTO_ACTIVATION_LEAD <= now <= start + timedelta(hours=3)):
+                continue
+            name = str(championship.get("name") or "Championship")
+            if championship.get("season"):
+                name += f" - {championship['season']}"
+            candidates.append((start, {
+                "type": "championship",
+                "id": str(championship.get("id", "")),
+                "name": name,
+                "source": "schedule",
+                "roundId": str(round_plan.get("id", "")),
+                "roundNumber": int(round_plan.get("roundNumber") or 0),
+                "startTime": start.isoformat(),
+            }))
+
+    if not candidates:
+        return None
+    underway = [item for item in candidates if item[0] <= now]
+    return max(underway, key=lambda item: item[0])[1] if underway else min(candidates, key=lambda item: item[0])[1]
 
 
 def nested_value(data, path):
@@ -331,8 +397,8 @@ class CompanionApp:
             self.active_competition_var.set(f"{competition['type'].title()}: {competition['name']}")
             self.log(f"Active competition changed to {competition['name']}.")
         else:
-            self.active_competition_var.set("No active competition. Select one on the dashboard.")
-            self.log("Active competition cleared; new race captures are paused.")
+            self.active_competition_var.set("Waiting for a scheduled event or dashboard selection.")
+            self.log("No competition is active; scheduled auto-activation is waiting.")
 
     def refresh_championships(self):
         if not self.user:
@@ -365,19 +431,19 @@ class CompanionApp:
                 labels.append(label)
                 self.competitions_by_label[label] = {"type": "event", "id": key, "name": item.get("title", "Event")}
             self.championship_combo["values"] = labels
-            active = state.get("activeCompetition")
+            active = normalize_active_competition(state.get("activeCompetition"))
             self.active_competition = None
             active_label = "Career race"
             if isinstance(active, dict):
                 active_key = f"{active.get('type')}:{active.get('id')}"
                 for label, competition in self.competitions_by_label.items():
                     if f"{competition['type']}:{competition['id']}" == active_key:
-                        self.active_competition = competition.copy()
+                        self.active_competition = {**competition, **active}
                         active_label = label
                         break
             self.active_competition_var.set(
                 f"{self.active_competition['type'].title()}: {self.active_competition['name']}"
-                if self.active_competition else "No active competition. Select one on the dashboard."
+                if self.active_competition else "Waiting for a scheduled event or dashboard selection."
             )
             self.championship_var.set(active_label)
             self.log(f"Loaded {len(self.championships)} championships, {len(self.single_events)} events, and active competition.")
@@ -441,9 +507,6 @@ class CompanionApp:
             messagebox.showerror("Sign in required", "Sign in before starting telemetry monitoring.")
             return
         self.refresh_championships()
-        if not self.active_competition:
-            messagebox.showerror("No active competition", "Set a championship or event as active in the web dashboard first.")
-            return
         try:
             telemetry = request_json(SIMHUB_TELEMETRY_URL)
             if not isinstance(telemetry, dict) or "session" not in telemetry:
@@ -457,7 +520,7 @@ class CompanionApp:
         settings = {
             "url": SIMHUB_TELEMETRY_URL,
             "fields": DEFAULT_FIELDS.copy(),
-            "competition": self.active_competition.copy(),
+            "competition": self.active_competition.copy() if self.active_competition else None,
             "user_id": self.user["localId"],
             "database_url": self.database_url_var.get().strip(),
             "api_key": self.api_key_var.get().strip(),
@@ -472,16 +535,32 @@ class CompanionApp:
 
     def active_competition_loop(self, settings):
         last_error = 0
-        competition = settings["competition"]
+        competition = normalize_active_competition(settings.get("competition"))
+        events = []
+        championships = []
+        next_schedule_refresh = 0.0
         while not self.active_sync_stop_event.is_set():
             try:
                 token = self.ensure_token(settings["api_key"])
-                value = request_json(firebase_database_url(
+                active_url = firebase_database_url(
                     settings["database_url"],
                     f"ams2Hub/{settings['user_id']}/activeCompetition",
                     token,
-                ))
-                updated_competition = normalize_active_competition(value)
+                )
+                remote_competition = normalize_active_competition(request_json(active_url))
+                now_monotonic = time.monotonic()
+                if now_monotonic >= next_schedule_refresh:
+                    events = rows_from_firebase(request_json(firebase_database_url(
+                        settings["database_url"], f"ams2Hub/{settings['user_id']}/events", token
+                    )))
+                    championships = rows_from_firebase(request_json(firebase_database_url(
+                        settings["database_url"], f"ams2Hub/{settings['user_id']}/championships", token
+                    )))
+                    next_schedule_refresh = now_monotonic + SCHEDULE_REFRESH_SECONDS
+                scheduled = scheduled_active_competition(events, championships)
+                updated_competition = remote_competition if remote_competition and remote_competition.get("source") != "schedule" else scheduled
+                if updated_competition != remote_competition:
+                    request_json(active_url, updated_competition, "PUT")
                 if updated_competition != competition:
                     competition = updated_competition
                     self.events.put(("active_competition", competition))
