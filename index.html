@@ -23,10 +23,17 @@
       font-family: 'Inter', sans-serif;
       background-color: #0B0D11;
       color: #E2E8F0;
+      -webkit-user-select: none;
+      user-select: none;
       background-image: 
         radial-gradient(circle at 15% 15%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
         radial-gradient(circle at 85% 85%, rgba(255, 184, 0, 0.03) 0%, transparent 40%),
         linear-gradient(to bottom, rgba(11, 13, 17, 0.95), rgba(11, 13, 17, 0.98));
+    }
+
+    input, textarea, select, [contenteditable="true"] {
+      -webkit-user-select: text;
+      user-select: text;
     }
 
     .carbon-card {
@@ -615,7 +622,7 @@
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship vehicle / class (same for every race)</span><input id="championship-vehicle-input" type="search" list="championship-known-vehicles" required placeholder="Search or enter vehicle" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
-        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="block text-gray-500 mt-1">Comma-separated, e.g. 25,18,15,12,10</span></label></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
         <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button id="championship-save-button" type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
@@ -757,6 +764,8 @@
     // ----------------------------------------------------
     // INITIAL APP STATE & LOCALSTORAGE PERSISTENCE
     // ----------------------------------------------------
+    const DEFAULT_CHAMPIONSHIP_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+
     const DEFAULT_STATE = {
       driver: {
         name: "My Driver",
@@ -1175,8 +1184,7 @@
     }
 
     function championshipPoints(championship, position) {
-      const points = Array.isArray(championship.points) ? championship.points : [];
-      return points[position - 1] || 0;
+      return DEFAULT_CHAMPIONSHIP_POINTS[position - 1] || 0;
     }
 
     function championshipRoundPlans(championship) {
@@ -1392,7 +1400,6 @@
       document.getElementById('championship-game-input').value = 'Automobilista 2';
       document.getElementById('championship-vehicle-input').value = '';
       document.getElementById('championship-rounds-input').value = '6';
-      document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-fields').innerHTML = '';
       setChampionshipModalMode(false);
       renderChampionshipRoundInputs();
@@ -1412,7 +1419,6 @@
       document.getElementById('championship-season-input').value = championship.season || '';
       document.getElementById('championship-vehicle-input').value = championship.vehicle || championshipRoundPlans(championship)[0]?.vehicle || '';
       document.getElementById('championship-rounds-input').value = championshipRoundCount(championship) || 1;
-      document.getElementById('championship-points-input').value = (championship.points || []).join(',') || '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-fields').innerHTML = '';
       setChampionshipModalMode(true);
       renderChampionshipRoundInputs();
@@ -1448,7 +1454,6 @@
       const name = document.getElementById('championship-name-input').value.trim();
       const game = document.getElementById('championship-game-input').value.trim();
       const vehicle = document.getElementById('championship-vehicle-input').value.trim();
-      const rawPoints = document.getElementById('championship-points-input').value.split(',').map(value => Number(value.trim()));
       const roundCount = Math.max(1, Math.min(50, Number(document.getElementById('championship-rounds-input').value) || 1));
       const roundPlans = Array.from({ length: roundCount }, (_, index) => {
         const roundNumber = index + 1;
@@ -1462,8 +1467,8 @@
           startTime: localTime ? new Date(localTime).toISOString() : ''
         };
       });
-      if (!name || !game || !vehicle || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0) || roundPlans.some(round => !round.track || !round.startTime)) {
-        showToast('Enter a series name, shared vehicle, valid points, and track and time for every race.', 'error');
+      if (!name || !game || !vehicle || roundPlans.some(round => !round.track || !round.startTime)) {
+        showToast('Enter a series name, shared vehicle, and track and time for every race.', 'error');
         return;
       }
       roundPlans.forEach(round => { round.vehicle = vehicle; });
@@ -1485,7 +1490,7 @@
         season: document.getElementById('championship-season-input').value.trim(),
         rounds: roundCount,
         roundPlans,
-        points: rawPoints,
+        points: DEFAULT_CHAMPIONSHIP_POINTS,
         createdAt: existing?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1501,7 +1506,6 @@
       document.getElementById('create-championship-modal').querySelector('form').reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
       document.getElementById('championship-vehicle-input').value = '';
-      document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-rounds-fields').innerHTML = '';
       editingChampionshipId = null;
