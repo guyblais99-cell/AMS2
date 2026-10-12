@@ -497,6 +497,10 @@
         </div>
         <button onclick="openModal('create-championship-modal')" class="px-4 py-2.5 rounded-xl bg-neon-cyan text-black font-extrabold text-xs uppercase hover:bg-cyan-300 flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Championship</button>
       </div>
+      <div class="carbon-card rounded-xl p-4 flex items-center gap-3">
+        <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
+        <input id="championship-search-input" type="search" oninput="filterChampionships()" placeholder="Search championships, rounds, tracks, or vehicles..." class="w-full bg-transparent text-sm text-white focus:outline-none" />
+      </div>
       <div id="championships-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
     </section>
 
@@ -608,12 +612,13 @@
   </div>
 
   <div id="create-championship-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
+    <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-gray-800 pb-3"><h3 class="text-lg font-bold text-white"><i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>Create Championship</h3><button onclick="closeModal('create-championship-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="handleCreateChampionship(event)" class="space-y-4 text-xs">
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
-        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Rounds</span><input id="championship-rounds-input" type="number" min="1" max="100" value="6" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish (comma separated)</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Points per finish</span><input id="championship-points-input" value="25,18,15,12,10,8,6,4,2,1" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="block text-gray-500 mt-1">Comma-separated, e.g. 25,18,15,12,10</span></label></div>
+        <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
         <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
       </form>
@@ -887,6 +892,7 @@
         document.getElementById('slider-skill-input').value = appState.driver.skillRating;
         document.getElementById('slider-skill-val').innerText = appState.driver.skillRating;
       }
+      if (modalId === 'create-championship-modal') renderChampionshipRoundInputs();
       document.getElementById(modalId)?.classList.remove('hidden');
     }
 
@@ -1003,7 +1009,7 @@
             </div>
             <div class="border-t border-gray-800 pt-2 space-y-1">
               <div class="flex justify-between text-[11px] text-gray-400"><span>Captured results</span><span class="text-white">${eventRaces.length}</span></div>
-              ${eventRaces.map(race => `<div class="flex justify-between text-[11px] text-gray-300"><span>${escapeHTML(race.game || 'Sim')} · P${Number(race.position) || '-'}</span><span>${escapeHTML(race.date || '')}</span></div>`).join('')}
+              ${eventRaces.map(race => `<div class="border-t border-gray-800 pt-1 text-[11px]"><div class="flex justify-between gap-2 text-gray-300"><span class="truncate">${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')} · P${Number(race.position) || '-'}</span><span>${escapeHTML(race.date || '')}</span></div>${race.needsReview ? `<div class="mt-1 flex flex-col sm:flex-row justify-between gap-1 text-neon-amber"><span>Planned ${escapeHTML(ev.track)} · ${escapeHTML(ev.carClass)}; detected ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}</span><button onclick="confirmCapturedRace('${String(race.id)}','event','${String(ev.id)}')" class="shrink-0 underline text-left">Confirm event</button></div>` : ''}</div>`).join('')}
             </div>
 
             <button onclick="toggleScheduleEvent(${Number.isSafeInteger(ev.id) ? ev.id : 0})" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${ev.scheduled ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
@@ -1114,15 +1120,174 @@
       return points[position - 1] || 0;
     }
 
+    function championshipRoundPlans(championship) {
+      return Array.isArray(championship.roundPlans) ? championship.roundPlans : [];
+    }
+
+    function championshipRoundCount(championship) {
+      return championshipRoundPlans(championship).length || Number(championship.rounds) || 0;
+    }
+
+    function comparableRaceName(value) {
+      return String(value || '').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function raceMatchesPlan(race, expectedTrack, expectedVehicle) {
+      const trackMatches = comparableRaceName(race.track) === comparableRaceName(expectedTrack);
+      const expected = comparableRaceName(expectedVehicle);
+      const observedVehicles = [race.carModel, race.carClass].map(comparableRaceName).filter(Boolean);
+      return trackMatches && (!expected || observedVehicles.includes(expected));
+    }
+
+    function assignCapturedRace(race) {
+      race.needsReview = false;
+      race.reviewReason = '';
+      if (race.championshipId) {
+        const championship = appState.championships.find(item => String(item.id) === String(race.championshipId));
+        if (!championship) {
+          race.needsReview = true;
+          race.reviewReason = 'The selected championship is no longer available.';
+          return;
+        }
+        const availableRounds = championshipRoundPlans(championship).filter(round =>
+          !appState.racesHistory.some(existing => String(existing.roundId || '') === String(round.id))
+        );
+        const matchingRounds = availableRounds.filter(round => raceMatchesPlan(race, round.track, round.vehicle));
+        let matchingRound = matchingRounds[0];
+        if (matchingRounds.length > 1 && race.startedAt) {
+          const raceStart = new Date(race.startedAt).getTime();
+          if (Number.isFinite(raceStart)) {
+            matchingRound = matchingRounds.sort((left, right) =>
+              Math.abs(new Date(left.startTime).getTime() - raceStart) - Math.abs(new Date(right.startTime).getTime() - raceStart)
+            )[0];
+          }
+        }
+        if (matchingRound) {
+          race.roundId = matchingRound.id;
+          race.roundNumber = matchingRound.roundNumber;
+          race.matchStatus = 'matched';
+          return;
+        }
+        race.needsReview = true;
+        race.reviewReason = availableRounds.length
+          ? 'Detected track or vehicle differs from the next uncompleted planned round.'
+          : 'No uncompleted planned round matches this result.';
+        if (availableRounds.length) race.suggestedRoundId = availableRounds[0].id;
+        return;
+      }
+      if (race.eventId) {
+        const event = appState.events.find(item => String(item.id) === String(race.eventId));
+        if (!event || !raceMatchesPlan(race, event.track, event.carClass)) {
+          race.needsReview = true;
+          race.reviewReason = event ? 'Detected track or vehicle differs from the planned event.' : 'The selected event is no longer available.';
+        } else {
+          race.matchStatus = 'matched';
+        }
+      }
+    }
+
+    function confirmCapturedRace(raceId, competitionType, competitionId, roundId = '') {
+      const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
+      if (!race) return;
+      if (competitionType === 'championship') {
+        const championship = appState.championships.find(item => String(item.id) === String(competitionId));
+        if (!championship) return;
+        let round = championshipRoundPlans(championship).find(item => String(item.id) === String(roundId));
+        if (!round && !roundId) {
+          const plans = championshipRoundPlans(championship);
+          const roundNumber = plans.reduce((maximum, item) => Math.max(maximum, Number(item.roundNumber) || 0), 0) + 1;
+          round = {
+            id: `extra-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            roundNumber,
+            track: race.track || 'Unscheduled race',
+            vehicle: race.carModel || race.carClass || 'Unknown vehicle',
+            startTime: race.startedAt || race.recordedAt || new Date().toISOString(),
+            addedFromResult: true
+          };
+          championship.roundPlans = [...plans, round];
+          championship.rounds = championship.roundPlans.length;
+        }
+        if (!round) return;
+        race.championshipId = String(competitionId);
+        race.eventId = '';
+        race.roundId = round.id;
+        race.roundNumber = round.roundNumber;
+      } else if (competitionType === 'event') {
+        race.eventId = String(competitionId);
+        race.championshipId = '';
+      }
+      race.needsReview = false;
+      race.matchStatus = 'confirmed';
+      race.reviewReason = '';
+      delete race.suggestedRoundId;
+      saveState();
+      showToast('Race result confirmed.');
+    }
+
+    function filterChampionships() {
+      renderChampionships();
+    }
+
+    function renderChampionshipRoundInputs() {
+      const container = document.getElementById('championship-rounds-fields');
+      const countInput = document.getElementById('championship-rounds-input');
+      if (!container || !countInput) return;
+      const currentValues = [];
+      for (let index = 1; index <= 50; index += 1) {
+        const track = document.getElementById(`championship-round-${index}-track`);
+        if (!track) break;
+        currentValues.push({
+          track: track.value,
+          vehicle: document.getElementById(`championship-round-${index}-vehicle`)?.value || '',
+          startTime: document.getElementById(`championship-round-${index}-time`)?.value || ''
+        });
+      }
+      const count = Math.max(1, Math.min(50, Number(countInput.value) || 1));
+      const knownTracks = new Set([
+        ...appState.racesHistory.map(race => race.track),
+        ...appState.events.map(event => event.track),
+        ...appState.championships.flatMap(championship => championshipRoundPlans(championship).map(round => round.track))
+      ].filter(Boolean));
+      const knownVehicles = new Set([
+        ...appState.racesHistory.flatMap(race => [race.carModel, race.carClass]),
+        ...appState.events.map(event => event.carClass),
+        ...appState.championships.flatMap(championship => championshipRoundPlans(championship).map(round => round.vehicle))
+      ].filter(Boolean));
+      const trackOptions = [...knownTracks].sort((a, b) => String(a).localeCompare(String(b))).map(value => `<option value="${escapeHTML(value)}"></option>`).join('');
+      const vehicleOptions = [...knownVehicles].sort((a, b) => String(a).localeCompare(String(b))).map(value => `<option value="${escapeHTML(value)}"></option>`).join('');
+      container.innerHTML = Array.from({ length: count }, (_, index) => {
+        const roundNumber = index + 1;
+        const previous = currentValues[index] || {};
+        return `<div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3 space-y-2">
+          <h4 class="text-xs font-bold text-neon-cyan">Race ${roundNumber}</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="block"><span class="block text-gray-400 mb-1">Track</span><input id="championship-round-${roundNumber}-track" type="search" list="championship-known-tracks" value="${escapeHTML(previous.track || '')}" placeholder="Search or enter track" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
+            <label class="block"><span class="block text-gray-400 mb-1">Vehicle / class</span><input id="championship-round-${roundNumber}-vehicle" type="search" list="championship-known-vehicles" value="${escapeHTML(previous.vehicle || '')}" placeholder="Search or enter vehicle" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
+          </div>
+          <label class="block"><span class="block text-gray-400 mb-1">Race time (your local time)</span><input id="championship-round-${roundNumber}-time" type="datetime-local" value="${escapeHTML(previous.startTime || '')}" required class="w-full bg-carbon-800 text-white p-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan" /></label>
+        </div>`;
+      }).join('') + `<datalist id="championship-known-tracks">${trackOptions}</datalist><datalist id="championship-known-vehicles">${vehicleOptions}</datalist>`;
+    }
+
     function renderChampionships() {
       const container = document.getElementById('championships-grid');
       if (!container) return;
-      if (!appState.championships.length) {
+      const searchTerm = (document.getElementById('championship-search-input')?.value || '').trim().toLowerCase();
+      const filteredChampionships = appState.championships.filter(championship => {
+        const roundText = championshipRoundPlans(championship).map(round => `${round.track} ${round.vehicle}`).join(' ');
+        return `${championship.name} ${championship.game} ${championship.season} ${roundText}`.toLowerCase().includes(searchTerm);
+      });
+      if (!filteredChampionships.length) {
+        if (appState.championships.length && searchTerm) {
+          container.innerHTML = '<div class="carbon-card rounded-xl p-6 text-sm text-gray-400 md:col-span-2 xl:col-span-3">No championships or rounds match this search.</div>';
+          return;
+        }
         container.innerHTML = '<div class="carbon-card rounded-xl p-6 text-sm text-gray-400 md:col-span-2 xl:col-span-3">No championships yet. Create a series, then assign race results to it.</div>';
         return;
       }
-      container.innerHTML = appState.championships.map(championship => {
+      container.innerHTML = filteredChampionships.map(championship => {
         const races = appState.racesHistory.filter(race => String(race.championshipId || '') === String(championship.id)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        const rounds = championshipRoundPlans(championship);
         const points = races.reduce((total, race) => total + championshipPoints(championship, Number(race.position) || 0), 0);
         const wins = races.filter(race => Number(race.position) === 1).length;
         const podiums = races.filter(race => Number(race.position) <= 3).length;
@@ -1130,11 +1295,28 @@
         const incidents = measuredIncidents.reduce((total, race) => total + Number(race.incidents), 0);
         const average = measuredIncidents.length ? (incidents / measuredIncidents.length).toFixed(1) : 'N/A';
         const isActive = appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(championship.id);
+        const roundRows = rounds.map(round => {
+          const result = races.find(race => String(race.roundId || '') === String(round.id));
+          const review = races.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id));
+          const scheduledAt = round.startTime ? new Date(round.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Time not set';
+          const outcome = result
+            ? `P${Number(result.position) || '-'} · ${championshipPoints(championship, Number(result.position) || 0)} pts`
+            : review
+              ? `Review: ${escapeHTML(review.track || 'Unknown track')} · ${escapeHTML(review.carModel || review.carClass || 'Unknown vehicle')}`
+              : 'Upcoming';
+          const resultControl = review
+            ? `<button onclick="confirmCapturedRace('${escapeHTML(review.id)}','championship','${escapeHTML(championship.id)}','${escapeHTML(round.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Confirm result</button>`
+            : '';
+          return `<div class="grid grid-cols-[3rem_1fr] gap-2 border-t border-gray-800 py-2 text-xs"><span class="text-gray-500 font-mono">R${round.roundNumber}</span><div class="min-w-0"><div class="flex justify-between gap-2"><strong class="text-white truncate">${escapeHTML(round.track)}</strong><span class="text-gray-400">${escapeHTML(scheduledAt)}</span></div><div class="flex justify-between gap-2 text-gray-400"><span class="truncate">${escapeHTML(round.vehicle)}</span><span class="text-right">${outcome} ${resultControl}</span></div></div></div>`;
+        }).join('');
+        const unassignedReviews = races.filter(race => race.needsReview && !race.suggestedRoundId).map(race =>
+          `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
+        ).join('');
         return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
-          <div class="flex justify-between gap-3"><div><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><span class="text-xs font-mono text-neon-cyan">${races.length}/${Number(championship.rounds) || 0} rounds</span></div>
+          <div class="flex justify-between gap-3"><div><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)} rounds</span></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
-          <div class="space-y-2">${races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 text-xs border-t border-gray-800 pt-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-xs text-gray-500">No rounds recorded yet.</p>'}</div>
+          <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
           <button onclick="setActiveCompetition('championship:${escapeHTML(championship.id)}')" class="w-full py-2 rounded-lg text-xs font-bold uppercase ${isActive ? 'bg-neon-amber/20 text-neon-amber border border-neon-amber/40' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}"><i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-flag-checkered'} mr-2"></i>${isActive ? 'Active capture championship' : 'Set as active championship'}</button>
         </article>`;
       }).join('');
@@ -1145,8 +1327,22 @@
       const name = document.getElementById('championship-name-input').value.trim();
       const game = document.getElementById('championship-game-input').value.trim();
       const rawPoints = document.getElementById('championship-points-input').value.split(',').map(value => Number(value.trim()));
-      if (!name || !game || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0)) {
-        showToast('Enter a name, game, and valid non-negative points list.', 'error');
+      const roundCount = Math.max(1, Math.min(50, Number(document.getElementById('championship-rounds-input').value) || 1));
+      const roundPlans = Array.from({ length: roundCount }, (_, index) => {
+        const roundNumber = index + 1;
+        const track = document.getElementById(`championship-round-${roundNumber}-track`)?.value.trim() || '';
+        const vehicle = document.getElementById(`championship-round-${roundNumber}-vehicle`)?.value.trim() || '';
+        const localTime = document.getElementById(`championship-round-${roundNumber}-time`)?.value || '';
+        return {
+          id: `round-${roundNumber}-${Date.now().toString(36)}`,
+          roundNumber,
+          track,
+          vehicle,
+          startTime: localTime ? new Date(localTime).toISOString() : ''
+        };
+      });
+      if (!name || !game || !rawPoints.length || rawPoints.some(value => !Number.isFinite(value) || value < 0) || roundPlans.some(round => !round.track || !round.vehicle || !round.startTime)) {
+        showToast('Enter a series name, valid points, and track, vehicle, and time for every race.', 'error');
         return;
       }
       appState.championships.unshift({
@@ -1154,7 +1350,8 @@
         name,
         game,
         season: document.getElementById('championship-season-input').value.trim(),
-        rounds: Number(document.getElementById('championship-rounds-input').value) || 1,
+        rounds: roundCount,
+        roundPlans,
         points: rawPoints,
         createdAt: new Date().toISOString()
       });
@@ -1162,6 +1359,8 @@
       document.getElementById('championship-game-input').value = 'Automobilista 2';
       document.getElementById('championship-points-input').value = '25,18,15,12,10,8,6,4,2,1';
       document.getElementById('championship-rounds-input').value = '6';
+      document.getElementById('championship-rounds-fields').innerHTML = '';
+      renderChampionshipRoundInputs();
       closeModal('create-championship-modal');
       saveState();
       showToast(`Championship "${name}" created.`);
@@ -1177,19 +1376,22 @@
         if (!Number.isInteger(position) || position < 1 || position > 99) continue;
         const hasIncidents = race.incidents !== null && race.incidents !== undefined && race.incidents !== '' && Number.isFinite(Number(race.incidents));
         const incidents = hasIncidents ? Math.max(0, Number(race.incidents)) : null;
-        appState.racesHistory.unshift({
+        const entry = {
           ...race,
           id: String(race.id || id),
           date: race.date || new Date().toISOString().slice(0, 10),
           game: race.game || 'Unknown sim',
           track: race.track || 'Unknown track',
+          carModel: race.carModel || '',
           carClass: race.carClass || race.car || 'Unknown class',
           position,
           incidents,
           xp: Number(race.xp) || 0,
           ratingDelta: race.ratingDelta || 'Telemetry',
           source: 'companion'
-        });
+        };
+        appState.racesHistory.unshift(entry);
+        assignCapturedRace(entry);
         appState.stats.races += 1;
         if (position === 1) appState.stats.wins += 1;
         if (position <= 3) appState.stats.podiums += 1;
@@ -1259,7 +1461,7 @@
       appState.driver.skillRating = Math.min(3000, Math.max(1000, appState.driver.skillRating + ratingDeltaNum));
 
       // Add to history
-      appState.racesHistory.unshift({
+      const entry = {
         id: Date.now(),
         date: new Date().toISOString().split('T')[0],
         game,
@@ -1267,11 +1469,15 @@
         eventId,
         track,
         carClass,
+        carModel: '',
+        startedAt: new Date().toISOString(),
         position: pos,
         incidents: inc,
         xp: xpEarned,
         ratingDelta: (ratingDeltaNum >= 0 ? `+${ratingDeltaNum}` : `${ratingDeltaNum}`)
-      });
+      };
+      appState.racesHistory.unshift(entry);
+      assignCapturedRace(entry);
       appState.racesHistory = appState.racesHistory.slice(0, 1000);
 
       closeModal('log-race-modal');

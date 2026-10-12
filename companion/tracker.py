@@ -24,7 +24,8 @@ DEFAULT_FIELDS = {
     "session": "session",
     "game": "game",
     "track": "track",
-    "car": "carClass",
+    "carModel": "car",
+    "carClass": "carClass",
     "position": "position",
 }
 
@@ -495,6 +496,7 @@ class CompanionApp:
     def monitor_loop(self, settings):
         previous_error = 0
         race_competition = None
+        race_started_at = None
         while not self.stop_event.is_set():
             try:
                 payload = request_json(settings["url"])
@@ -504,6 +506,7 @@ class CompanionApp:
                 if in_race:
                     if not self.racing:
                         race_competition = self.active_competition.copy() if self.active_competition else None
+                        race_started_at = datetime.now(timezone.utc).isoformat()
                     self.racing = True
                     self.race_snapshot = fields
                 elif self.racing:
@@ -514,8 +517,10 @@ class CompanionApp:
                         race = {
                             "game": str(snapshot.get("game") or "Unknown sim"),
                             "track": str(snapshot.get("track") or "Unknown track"),
-                            "carClass": str(snapshot.get("car") or "Unknown class"),
+                            "carModel": str(snapshot.get("carModel") or "Unknown vehicle"),
+                            "carClass": str(snapshot.get("carClass") or "Unknown class"),
                             "position": position,
+                            "startedAt": race_started_at,
                         }
                         race[f"{race_competition['type']}Id"] = race_competition["id"]
                         self.events.put(("capture", race))
@@ -524,6 +529,7 @@ class CompanionApp:
                     else:
                         self.events.put(("log", "Race session ended, but no valid finish position was mapped; skipped upload."))
                     race_competition = None
+                    race_started_at = None
                 previous_error = 0
             except (urllib.error.URLError, json.JSONDecodeError, ValueError) as error:
                 now = time.monotonic()
