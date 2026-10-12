@@ -6,7 +6,7 @@ An Automobilista 2 career dashboard with race logging, cross-device account sync
 
 Serve the repository root with a static host such as Vercel, or open `index.html` for local-only use. Sign-in and cloud sync require the Firebase settings in `firebase-config.js`, Firebase Email/Password Authentication, and Realtime Database.
 
-The dashboard tracks total races, wins, podiums, clean races, incident averages, career ratings, race history, and scheduled events. Create a championship with its season, round count, and points-per-finish list, then assign manual race results to it. Companion uploads can also be associated with a championship.
+The dashboard tracks total races, wins, podiums, career ratings, race history, scheduled events, and championships with custom points. Use the **Active competition** selector to mark one championship or single event as the current multiplayer session. Race results captured while monitoring is active are attached to that selection. Races from the SimHub bridge include game, track, car/class, and finish position; incident counts are not captured.
 
 Restrict Realtime Database access to the signed-in account owner. A minimal ruleset for this app is:
 
@@ -33,13 +33,19 @@ Requires Python 3 with Tkinter (included in the standard Windows Python installe
 python companion/tracker.py
 ```
 
-1. Sign in with the same Firebase account used by the dashboard. The app reads the Firebase API key and database URL from `firebase-config.js`; they can also be entered in the Account tab. The password is not saved.
-2. Use **Race Upload** to upload a result manually, or refresh and select a championship first.
-3. For automatic capture, configure a local SimHub JSON endpoint and map its properties in the **SimHub** tab. Use **Test endpoint** to check the values before starting monitoring. Choose a championship for automatic captures if desired.
+1. Build the SimHub plugin from the repository root:
 
-The companion polls the configured JSON endpoint, recognizes session values containing `race`, remembers the last mapped race data, and uploads when the session changes away from race. Position and incident values must be numeric. Uploaded entries are written under the signed-in user's `companionRaces` Firebase child and imported idempotently into dashboard career totals and history.
+  ```powershell
+  dotnet build simhub-plugin\Ams2HubCapturePlugin.csproj
+  ```
 
-SimHub does not provide one stable, universal JSON endpoint/property map across every game and installation. The endpoint and mappings therefore need to match the local SimHub integration in use; automatic capture is not plug-and-play until the endpoint test returns the expected session, track, car, position, and incident values. Manual companion uploads work independently of that telemetry setup.
+2. Close SimHub, then copy `simhub-plugin\bin\Debug\net48\Ams2HubCapturePlugin.dll` into the SimHub install folder (typically `C:\Program Files (x86)\SimHub`). Windows may request administrator permission. Restart SimHub so it loads the plugin.
+3. Run `python companion/tracker.py` and sign in with the same Firebase account as the dashboard. The Firebase API key and database URL are read from `firebase-config.js`; the account password is not saved.
+4. In the web dashboard, set a championship or event as **Active competition**. In the companion's **SimHub** tab, click **Refresh competitions**, then **Test plugin**. Start monitoring only after the active competition and telemetry endpoint are shown.
+
+The plugin exposes SimHub's normalized game, session, track, car/class, and position data on `127.0.0.1:17891`. The companion watches for race sessions and uploads their final position to the signed-in user's Firebase inbox, tagged with the active championship or event. Keep the companion open and monitoring during the session. Changes to the active competition in the dashboard are picked up automatically within a few seconds; a race remains tagged to the competition that was active when it began. With no active competition, automatic capture is paused. The active selection is the explicit multiplayer marker; this avoids mistaking offline AI fields for proof of an online lobby.
+
+The SimHub bridge does not capture incident counts. The dashboard displays incident statistics only for records that actually include incident data.
 
 ## Hosting and Offline Use
 

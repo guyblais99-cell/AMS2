@@ -136,6 +136,10 @@
 
   <!-- MAIN APP CONTENT WRAPPER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
+    <section class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 border border-neon-cyan/25" aria-label="Active competition">
+      <div class="flex-1 min-w-0"><h2 class="text-sm font-bold text-white">Active competition</h2><p id="active-competition-status" class="text-xs text-gray-400">Race capture is paused until you select a championship or event.</p></div>
+      <select id="active-competition-select" onchange="setActiveCompetition(this.value)" class="w-full sm:w-auto sm:min-w-64 bg-carbon-900 text-white p-2.5 rounded-lg border border-gray-800 focus:outline-none focus:border-neon-cyan" aria-label="Select active competition"><option value="">No active competition</option></select>
+    </section>
 
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-content space-y-6">
@@ -771,7 +775,8 @@
       racesHistory: [],
       events: [],
       championships: [],
-      companionRaceIds: []
+      companionRaceIds: [],
+      activeCompetition: null
     };
 
     function cloneDefaultState() {
@@ -810,6 +815,7 @@
       appState.events = Array.isArray(appState.events) ? appState.events : [];
       appState.championships = Array.isArray(appState.championships) ? appState.championships : [];
       appState.companionRaceIds = Array.isArray(appState.companionRaceIds) ? appState.companionRaceIds : [];
+      appState.activeCompetition = appState.activeCompetition && typeof appState.activeCompetition === 'object' ? appState.activeCompetition : null;
       try { localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState)); } catch (error) { console.error(error); }
       renderApp();
     }
@@ -976,7 +982,10 @@
         return;
       }
 
-      container.innerHTML = filtered.map(ev => `
+      container.innerHTML = filtered.map(ev => {
+        const isActive = appState.activeCompetition?.type === 'event' && String(appState.activeCompetition.id) === String(ev.id);
+        const eventRaces = appState.racesHistory.filter(race => String(race.eventId || '') === String(ev.id)).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+        return `
         <div class="carbon-card rounded-2xl p-5 space-y-4 flex flex-col justify-between">
           <div class="space-y-2">
             <div class="flex justify-between items-start">
@@ -992,14 +1001,22 @@
               <span>Start Time:</span>
               <span class="text-white">${escapeHTML(new Date(ev.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span>
             </div>
+            <div class="border-t border-gray-800 pt-2 space-y-1">
+              <div class="flex justify-between text-[11px] text-gray-400"><span>Captured results</span><span class="text-white">${eventRaces.length}</span></div>
+              ${eventRaces.map(race => `<div class="flex justify-between text-[11px] text-gray-300"><span>${escapeHTML(race.game || 'Sim')} · P${Number(race.position) || '-'}</span><span>${escapeHTML(race.date || '')}</span></div>`).join('')}
+            </div>
 
             <button onclick="toggleScheduleEvent(${Number.isSafeInteger(ev.id) ? ev.id : 0})" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${ev.scheduled ? 'bg-neon-green/20 text-neon-green border border-neon-green/30' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
               <i class="fa-solid ${ev.scheduled ? 'fa-check' : 'fa-calendar-plus'}"></i>
               ${ev.scheduled ? 'Scheduled on Calendar' : 'Schedule Event'}
             </button>
+            <button onclick="setActiveCompetition('event:${Number.isSafeInteger(ev.id) ? ev.id : 0}')" class="w-full py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isActive ? 'bg-neon-amber/20 text-neon-amber border border-neon-amber/40' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}">
+              <i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-flag-checkered'}"></i> ${isActive ? 'Active capture event' : 'Set as active event'}
+            </button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function filterEvents() {
@@ -1015,6 +1032,34 @@
       }
     }
 
+    function handleCreateEventSubmit(event) {
+      event.preventDefault();
+      const title = document.getElementById('event-title-input').value.trim();
+      const track = document.getElementById('event-track-input').value.trim();
+      const carClass = document.getElementById('event-class-input').value.trim();
+      const startTime = document.getElementById('event-time-input').value;
+      if (!title || !track || !carClass || !startTime) {
+        showToast('Complete the event title, track, class, and start time.', 'error');
+        return;
+      }
+      const eventRecord = {
+        id: Date.now(),
+        title,
+        track,
+        carClass,
+        duration: `${Number(document.getElementById('event-duration-input').value) || 45} min`,
+        startTime: new Date(startTime).toISOString(),
+        scheduled: false,
+        createdAt: new Date().toISOString()
+      };
+      appState.events.unshift(eventRecord);
+      document.getElementById('create-event-form').reset();
+      document.getElementById('event-duration-input').value = '45';
+      closeModal('create-event-modal');
+      saveState();
+      showToast(`Event "${title}" created. Set it active to capture its races.`);
+    }
+
     function renderChampionshipOptions() {
       const select = document.getElementById('modal-championship-input');
       if (!select) return;
@@ -1023,6 +1068,45 @@
         `<option value="${escapeHTML(championship.id)}">${escapeHTML(championship.name)}${championship.season ? ` - ${escapeHTML(championship.season)}` : ''}</option>`
       ).join('');
       if (appState.championships.some(championship => String(championship.id) === selected)) select.value = selected;
+      else if (appState.activeCompetition?.type === 'championship') select.value = String(appState.activeCompetition.id);
+    }
+
+    function renderActiveCompetition() {
+      const select = document.getElementById('active-competition-select');
+      const status = document.getElementById('active-competition-status');
+      if (!select || !status) return;
+      const options = [
+        ...appState.championships.map(item => ({ type: 'championship', id: item.id, name: `${item.name}${item.season ? ` - ${item.season}` : ''}` })),
+        ...appState.events.map(item => ({ type: 'event', id: item.id, name: item.title }))
+      ];
+      select.innerHTML = '<option value="">No active competition</option>' + options.map(item =>
+        `<option value="${item.type}:${escapeHTML(item.id)}">${item.type === 'event' ? 'Event' : 'Championship'}: ${escapeHTML(item.name)}</option>`
+      ).join('');
+      const active = appState.activeCompetition;
+      const activeValue = active ? `${active.type}:${active.id}` : '';
+      if ([...select.options].some(option => option.value === activeValue)) select.value = activeValue;
+      else if (active) {
+        appState.activeCompetition = null;
+        select.value = '';
+      }
+      status.textContent = appState.activeCompetition
+        ? `Race results will be captured for ${appState.activeCompetition.name}.`
+        : 'Race capture is paused until you select a championship or event.';
+    }
+
+    function setActiveCompetition(value) {
+      if (!value) {
+        appState.activeCompetition = null;
+      } else {
+        const separator = value.indexOf(':');
+        const type = value.slice(0, separator);
+        const id = value.slice(separator + 1);
+        const list = type === 'championship' ? appState.championships : type === 'event' ? appState.events : [];
+        const item = list.find(candidate => String(candidate.id) === id);
+        appState.activeCompetition = item ? { type, id, name: type === 'event' ? item.title : item.name } : null;
+      }
+      saveState();
+      showToast(appState.activeCompetition ? `Active competition: ${appState.activeCompetition.name}` : 'Race capture paused.');
     }
 
     function championshipPoints(championship, position) {
@@ -1042,13 +1126,16 @@
         const points = races.reduce((total, race) => total + championshipPoints(championship, Number(race.position) || 0), 0);
         const wins = races.filter(race => Number(race.position) === 1).length;
         const podiums = races.filter(race => Number(race.position) <= 3).length;
-        const incidents = races.reduce((total, race) => total + (Number(race.incidents) || 0), 0);
-        const average = races.length ? (incidents / races.length).toFixed(1) : '0.0';
+        const measuredIncidents = races.filter(race => race.incidents !== null && race.incidents !== undefined && Number.isFinite(Number(race.incidents)));
+        const incidents = measuredIncidents.reduce((total, race) => total + Number(race.incidents), 0);
+        const average = measuredIncidents.length ? (incidents / measuredIncidents.length).toFixed(1) : 'N/A';
+        const isActive = appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(championship.id);
         return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
           <div class="flex justify-between gap-3"><div><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><span class="text-xs font-mono text-neon-cyan">${races.length}/${Number(championship.rounds) || 0} rounds</span></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
           <div class="space-y-2">${races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 text-xs border-t border-gray-800 pt-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-xs text-gray-500">No rounds recorded yet.</p>'}</div>
+          <button onclick="setActiveCompetition('championship:${escapeHTML(championship.id)}')" class="w-full py-2 rounded-lg text-xs font-bold uppercase ${isActive ? 'bg-neon-amber/20 text-neon-amber border border-neon-amber/40' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}"><i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-flag-checkered'} mr-2"></i>${isActive ? 'Active capture championship' : 'Set as active championship'}</button>
         </article>`;
       }).join('');
     }
@@ -1088,7 +1175,8 @@
         if (known.has(String(id)) || !race || typeof race !== 'object') continue;
         const position = Number(race.position);
         if (!Number.isInteger(position) || position < 1 || position > 99) continue;
-        const incidents = Math.max(0, Number(race.incidents) || 0);
+        const hasIncidents = race.incidents !== null && race.incidents !== undefined && race.incidents !== '' && Number.isFinite(Number(race.incidents));
+        const incidents = hasIncidents ? Math.max(0, Number(race.incidents)) : null;
         appState.racesHistory.unshift({
           ...race,
           id: String(race.id || id),
@@ -1106,7 +1194,7 @@
         if (position === 1) appState.stats.wins += 1;
         if (position <= 3) appState.stats.podiums += 1;
         if (incidents === 0) appState.stats.cleanRaces += 1;
-        appState.stats.totalIncidents += incidents;
+        if (incidents !== null) appState.stats.totalIncidents += incidents;
         appState.companionRaceIds.push(String(id));
         known.add(String(id));
         importedIds.push(String(id));
@@ -1134,7 +1222,10 @@
       e.preventDefault();
       const track = document.getElementById('modal-track-input').value;
       const game = document.getElementById('modal-game-input').value.trim() || 'Unknown sim';
-      const championshipId = document.getElementById('modal-championship-input').value || '';
+      const active = appState.activeCompetition;
+      const selectedChampionship = document.getElementById('modal-championship-input').value || '';
+      const championshipId = active?.type === 'event' ? '' : selectedChampionship || (active?.type === 'championship' ? String(active.id) : '');
+      const eventId = appState.activeCompetition?.type === 'event' ? String(appState.activeCompetition.id) : '';
       const carClass = document.getElementById('modal-class-input').value;
       const pos = parseInt(document.getElementById('modal-pos-input').value);
       const inc = parseInt(document.getElementById('modal-incidents-input').value);
@@ -1173,6 +1264,7 @@
         date: new Date().toISOString().split('T')[0],
         game,
         championshipId,
+        eventId,
         track,
         carClass,
         position: pos,
@@ -1213,12 +1305,14 @@
       document.getElementById('stat-podiums').innerText = appState.stats.podiums;
       const winPct = appState.stats.races > 0 ? ((appState.stats.wins / appState.stats.races) * 100).toFixed(1) : 0;
       const podPct = appState.stats.races > 0 ? ((appState.stats.podiums / appState.stats.races) * 100).toFixed(1) : 0;
-      const cleanPct = appState.stats.races > 0 ? ((appState.stats.cleanRaces / appState.stats.races) * 100).toFixed(1) : 0;
-      const avgInc = appState.stats.races > 0 ? (appState.stats.totalIncidents / appState.stats.races).toFixed(1) : 0;
+      const unknownIncidentRaces = appState.racesHistory.filter(race => race.source === 'companion' && (race.incidents === null || race.incidents === undefined)).length;
+      const racesWithIncidentData = Math.max(0, appState.stats.races - unknownIncidentRaces);
+      const cleanPct = racesWithIncidentData > 0 ? ((appState.stats.cleanRaces / racesWithIncidentData) * 100).toFixed(1) : 'N/A';
+      const avgInc = racesWithIncidentData > 0 ? (appState.stats.totalIncidents / racesWithIncidentData).toFixed(1) : 'N/A';
 
       document.getElementById('stat-win-rate').innerText = `${winPct}%`;
       document.getElementById('stat-podium-rate').innerText = `${podPct}%`;
-      document.getElementById('stat-clean-rate').innerText = `${cleanPct}%`;
+      document.getElementById('stat-clean-rate').innerText = cleanPct === 'N/A' ? cleanPct : `${cleanPct}%`;
       document.getElementById('stat-avg-incidents').innerText = avgInc;
 
       // Ratings
@@ -1241,7 +1335,7 @@
             <td class="p-3 font-bold text-white">${escapeHTML(r.track)}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded bg-carbon-800 border border-gray-700 text-neon-cyan">${escapeHTML(r.carClass)}</span></td>
             <td class="p-3 font-bold font-mono ${r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">P${r.position}</td>
-            <td class="p-3 font-mono ${r.incidents === 0 ? 'text-neon-green' : 'text-neon-crimson'}">${r.incidents}x</td>
+            <td class="p-3 font-mono ${r.incidents == null ? 'text-gray-500' : r.incidents === 0 ? 'text-neon-green' : 'text-neon-crimson'}">${r.incidents == null ? 'N/A' : `${r.incidents}x`}</td>
             <td class="p-3 font-mono text-gray-300">+${r.xp} XP</td>
             <td class="p-3 font-mono ${String(r.ratingDelta).startsWith('+') ? 'text-neon-green' : 'text-neon-crimson'}">${escapeHTML(r.ratingDelta)}</td>
           </tr>
@@ -1257,6 +1351,7 @@
       renderEvents();
       renderChampionships();
       renderChampionshipOptions();
+      renderActiveCompetition();
       renderRatingMilestones();
     }
 

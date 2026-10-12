@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Ams2HubCapturePlugin</AssemblyName>
+    <RootNamespace>Ams2HubCapturePlugin</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <SimHubPath Condition="'$(SimHubPath)' == ''">C:\Program Files (x86)\SimHub</SimHubPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="All" />
+    <Reference Include="GameReaderCommon">
+      <HintPath>$(SimHubPath)\GameReaderCommon.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="SimHub.Plugins">
+      <HintPath>$(SimHubPath)\SimHub.Plugins.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="SimHub.Logging">
+      <HintPath>$(SimHubPath)\SimHub.Logging.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="log4net">
+      <HintPath>$(SimHubPath)\log4net.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+</Project>
