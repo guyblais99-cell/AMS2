@@ -418,6 +418,7 @@
                 <th class="p-3">Vehicle</th>
                 <th class="p-3">Finish</th>
                 <th class="p-3">Status</th>
+                <th class="p-3">Actions</th>
               </tr>
             </thead>
             <tbody id="recent-races-tbody" class="divide-y divide-gray-800/60 font-medium">
@@ -1051,10 +1052,18 @@
       const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
       const now = Date.now();
       const entries = buildCalendarEntries();
+      const openEntries = entries.filter(entry => !entry.result).sort((left, right) => {
+        const leftUpcoming = Number.isFinite(left.timestamp) && left.timestamp >= now;
+        const rightUpcoming = Number.isFinite(right.timestamp) && right.timestamp >= now;
+        if (leftUpcoming !== rightUpcoming) return leftUpcoming ? -1 : 1;
+        const leftTime = Number.isFinite(left.timestamp) ? left.timestamp : Number.MAX_SAFE_INTEGER;
+        const rightTime = Number.isFinite(right.timestamp) ? right.timestamp : Number.MAX_SAFE_INTEGER;
+        return leftTime - rightTime || left.title.localeCompare(right.title);
+      });
 
-      const nextEntry = entries.find(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
+      const nextEntry = openEntries.find(entry => Number.isFinite(entry.timestamp) && entry.timestamp >= now);
       const active = appState.activeCompetition;
-      const activeEntry = entries.find(entry => active?.source === 'schedule' && active.type === entry.type && String(active.id) === entry.id &&
+      const activeEntry = openEntries.find(entry => active?.source === 'schedule' && active.type === entry.type && String(active.id) === entry.id &&
         (entry.type !== 'championship' || String(active.roundId || '') === entry.roundId));
       const highlight = document.getElementById('next-event-highlight');
       if (highlight) {
@@ -1064,15 +1073,15 @@
           : '<div class="carbon-card rounded-xl px-4 py-3 text-sm text-gray-400">No upcoming events or championship rounds.</div>';
       }
 
-      const filtered = entries.filter(entry => {
+      const filtered = openEntries.filter(entry => {
         const matchesSearch = `${entry.title} ${entry.track} ${entry.vehicle}`.toLowerCase().includes(searchTerm);
         const matchesClass = filterClass === 'ALL' || String(entry.vehicle || '').includes(filterClass);
         return matchesSearch && matchesClass;
       });
       if (!filtered.length) {
-        container.innerHTML = entries.length
+        container.innerHTML = openEntries.length
           ? '<p class="text-sm text-gray-400">No calendar items match these filters.</p>'
-          : '<p class="text-sm text-gray-400">No events or championship rounds yet.</p>';
+          : '<p class="text-sm text-gray-400">No upcoming races. Completed results are in Recent Race Results.</p>';
         return;
       }
       container.innerHTML = filtered.map(entry => {
@@ -1652,10 +1661,11 @@
             <td class="p-3 text-gray-300">${escapeHTML(r.carModel || r.carClass || 'Unknown vehicle')}</td>
             <td class="p-3 font-bold font-mono ${r.status === 'DNF' ? 'text-neon-crimson' : r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">${raceFinishLabel(r)}</td>
             <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : 'Recorded'}</td>
+            <td class="p-3"><button type="button" onclick="openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></td>
           </tr>
         `).join('');
         if (!appState.racesHistory.length) {
-          tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
         }
       }
 
