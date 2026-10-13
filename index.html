@@ -137,6 +137,30 @@
           </div>
           <div>
             <h1 class="font-extrabold text-lg tracking-wider text-white flex items-center gap-2">
+          <!-- Modal: Manually Edit a Race Result -->
+          <div id="race-result-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="carbon-card rounded-2xl max-w-md w-full p-6 space-y-5 border border-neon-cyan/30">
+              <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <div>
+                  <h3 class="text-lg font-bold text-white">Edit Race Result</h3>
+                  <p id="race-result-context" class="text-xs text-gray-400 mt-1"></p>
+                </div>
+                <button type="button" onclick="closeModal('race-result-modal')" class="text-gray-400 hover:text-white" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button>
+              </div>
+              <form onsubmit="saveRaceResult(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                  <label class="block"><span class="block text-gray-300 font-semibold mb-1">Status</span><select id="race-result-status" onchange="toggleRacePositionField()" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan"><option value="finished">Finished</option><option value="DNF">DNF</option></select></label>
+                  <label id="race-result-position-field" class="block"><span class="block text-gray-300 font-semibold mb-1">Finish position</span><input id="race-result-position" type="number" min="1" max="99" step="1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+                </div>
+                <label class="block"><span class="block text-gray-300 font-semibold mb-1">Incidents <span class="font-normal text-gray-500">(optional)</span></span><input id="race-result-incidents" type="number" min="0" step="1" placeholder="Not recorded" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+                <div class="pt-2 flex justify-end gap-3">
+                  <button type="button" onclick="closeModal('race-result-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
+                  <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase hover:bg-cyan-300">Save Result</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
               AMS2 <span class="text-neon-cyan">HUB</span>
               <span class="text-xs px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono">v2.5 PRO</span>
             </h1>
@@ -749,6 +773,7 @@
 
     let appState = readLocalState();
     let editingChampionshipId = null;
+    let editingRaceResultId = null;
     let championshipRoundDraft = [];
     function saveState() {
       renderApp();
@@ -947,6 +972,49 @@
         });
     }
 
+    function ensurePastCalendarDNFs() {
+      const now = Date.now();
+      let created = false;
+      for (const entry of buildCalendarEntries()) {
+        const durationMatch = String(entry.event?.duration || '45').match(/\d+/);
+        const durationMinutes = durationMatch ? Math.max(5, Number(durationMatch[0]) || 45) : 45;
+        const expiry = entry.timestamp + (entry.type === 'event' ? (durationMinutes + 30) * 60000 : 3 * 60 * 60 * 1000);
+        if (entry.result || !Number.isFinite(expiry) || expiry >= now) continue;
+        const round = entry.type === 'championship'
+          ? championshipRoundPlans(entry.championship).find(item => String(item.id) === entry.roundId)
+          : null;
+        appState.racesHistory.unshift({
+          id: `missed-${entry.type}-${entry.id}${entry.roundId ? `-${entry.roundId}` : ''}`,
+          date: new Date(entry.timestamp).toISOString().slice(0, 10),
+          recordedAt: new Date(now).toISOString(),
+          game: 'Automobilista 2',
+          track: entry.track || 'Unknown track',
+          carModel: '',
+          carClass: entry.vehicle || 'Unknown class',
+          position: null,
+          status: 'DNF',
+          incidents: null,
+          xp: 0,
+          source: 'auto-dnf',
+          eventId: entry.type === 'event' ? entry.id : '',
+          championshipId: entry.type === 'championship' ? entry.id : '',
+          roundId: entry.roundId || '',
+          roundNumber: round?.roundNumber || 0
+        });
+        created = true;
+      }
+      if (created) {
+        try { localStorage.setItem('AMS2_HUB_STATE', JSON.stringify(appState)); }
+        catch (error) { console.error('Could not save automatic DNF results:', error); }
+        window.setTimeout(() => window.onStateSaved?.(appState), 0);
+      }
+      return created;
+    }
+
+    function raceFinishLabel(race) {
+      return race?.status === 'DNF' ? 'DNF' : `P${Number(race?.position) || '-'}`;
+    }
+
     function renderNextScheduledRace() {
       const title = document.getElementById('next-event-title');
       const details = document.getElementById('next-event-class');
@@ -1012,17 +1080,21 @@
           (entry.type !== 'championship' || (active.source === 'schedule' && String(active.roundId || '') === entry.roundId));
         const isNext = nextEntry === entry;
         const review = Boolean(entry.result?.needsReview);
-        const status = isActive ? 'Activated' : review ? 'Needs confirmation' : entry.result ? `Completed · P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
+        const status = isActive ? 'Activated' : review ? 'Needs confirmation' : entry.result ? entry.result.status === 'DNF' ? 'DNF' : `Completed · P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
         const when = Number.isFinite(entry.timestamp)
           ? new Date(entry.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
           : 'Time not set';
-        const actions = entry.type === 'event'
+        const editAction = entry.result
+          ? `<button type="button" onclick="openRaceResultEditor('${escapeHTML(entry.result.id)}')" class="shrink-0 text-[11px] text-neon-cyan hover:text-cyan-200 underline">Edit result</button>`
+          : '';
+        const scheduleAction = entry.type === 'event' && !entry.result
           ? `<button onclick="toggleScheduleEvent(${Number(entry.id) || 0})" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${entry.scheduled ? 'bg-neon-green/15 text-neon-green border border-neon-green/30' : 'bg-carbon-700 text-gray-300 border border-gray-700'}">${entry.scheduled ? 'Auto-activation on' : 'Enable auto-activation'}</button>`
           : '';
+        const actions = `${editAction}${scheduleAction}`;
         return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isActive ? 'border-neon-amber' : isNext ? 'border-neon-cyan/50' : ''}">
           <time class="calendar-agenda-time text-xs font-mono text-gray-400">${escapeHTML(when)}</time>
           <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] text-neon-amber font-bold">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} · ${escapeHTML(entry.vehicle)}</p></div>
-          <div class="calendar-agenda-status"><span class="text-[11px] ${review ? 'text-neon-amber' : entry.result ? 'text-neon-green' : 'text-gray-400'}">${status}</span>${actions}</div>
+          <div class="calendar-agenda-status"><span class="text-[11px] ${review ? 'text-neon-amber' : entry.result?.status === 'DNF' ? 'text-neon-crimson' : entry.result ? 'text-neon-green' : 'text-gray-400'}">${status}</span>${actions}</div>
         </article>`;
       }).join('');
     }
@@ -1102,7 +1174,7 @@
           return;
         }
         const availableRounds = championshipRoundPlans(championship).filter(round =>
-          !appState.racesHistory.some(existing => String(existing.roundId || '') === String(round.id))
+          !appState.racesHistory.some(existing => existing.source !== 'auto-dnf' && String(existing.roundId || '') === String(round.id))
         );
         const matchingRounds = availableRounds.filter(round => raceMatchesPlan(race, round.track, round.vehicle));
         let matchingRound = matchingRounds[0];
@@ -1176,6 +1248,70 @@
       showToast('Race result confirmed.');
     }
 
+    function openRaceResultEditor(raceId) {
+      const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
+      if (!race) return;
+      editingRaceResultId = String(race.id);
+      document.getElementById('race-result-context').textContent = `${raceCompetitionLabel(race)} · ${race.track || 'Unknown track'}`;
+      document.getElementById('race-result-status').value = race.status === 'DNF' ? 'DNF' : 'finished';
+      document.getElementById('race-result-position').value = Number(race.position) || '';
+      document.getElementById('race-result-incidents').value = race.incidents ?? '';
+      toggleRacePositionField();
+      openModal('race-result-modal');
+    }
+
+    function toggleRacePositionField() {
+      const isDnf = document.getElementById('race-result-status').value === 'DNF';
+      document.getElementById('race-result-position-field').classList.toggle('hidden', isDnf);
+      document.getElementById('race-result-position').required = !isDnf;
+    }
+
+    function saveRaceResult(event) {
+      event.preventDefault();
+      const race = appState.racesHistory.find(item => String(item.id) === String(editingRaceResultId));
+      if (!race) return;
+      const status = document.getElementById('race-result-status').value;
+      const position = status === 'DNF' ? null : Number(document.getElementById('race-result-position').value);
+      const incidentsValue = document.getElementById('race-result-incidents').value;
+      const incidents = incidentsValue === '' ? null : Number(incidentsValue);
+      if (status !== 'DNF' && (!Number.isInteger(position) || position < 1 || position > 99)) {
+        showToast('Enter a finish position from 1 to 99, or select DNF.', 'error');
+        return;
+      }
+      if (incidents !== null && (!Number.isInteger(incidents) || incidents < 0)) {
+        showToast('Incidents must be a non-negative whole number.', 'error');
+        return;
+      }
+
+      const wasAutoDnf = race.source === 'auto-dnf';
+      const previousPosition = Number(race.position) || 0;
+      const previousIncidents = race.incidents === null || race.incidents === undefined || race.incidents === ''
+        ? null
+        : Number(race.incidents);
+      const nextPosition = position || 0;
+      if (wasAutoDnf && status !== 'DNF') {
+        appState.stats.races += 1;
+        appState.stats.wins += nextPosition === 1 ? 1 : 0;
+        appState.stats.podiums += nextPosition >= 1 && nextPosition <= 3 ? 1 : 0;
+        if (incidents === 0) appState.stats.cleanRaces += 1;
+        if (incidents !== null) appState.stats.totalIncidents += incidents;
+        race.source = 'manual';
+      } else if (!wasAutoDnf) {
+        appState.stats.wins = Math.max(0, appState.stats.wins - (previousPosition === 1 ? 1 : 0) + (nextPosition === 1 ? 1 : 0));
+        appState.stats.podiums = Math.max(0, appState.stats.podiums - (previousPosition >= 1 && previousPosition <= 3 ? 1 : 0) + (nextPosition >= 1 && nextPosition <= 3 ? 1 : 0));
+        appState.stats.cleanRaces = Math.max(0, appState.stats.cleanRaces - (previousIncidents === 0 ? 1 : 0) + (incidents === 0 ? 1 : 0));
+        appState.stats.totalIncidents = Math.max(0, appState.stats.totalIncidents - (Number(previousIncidents) || 0) + (Number(incidents) || 0));
+      }
+      race.position = position;
+      race.status = status === 'DNF' ? 'DNF' : 'finished';
+      race.incidents = incidents;
+      race.matchStatus = 'manual';
+      closeModal('race-result-modal');
+      editingRaceResultId = null;
+      saveState();
+      showToast('Race result updated.');
+    }
+
     function filterChampionships() {
       renderChampionships();
     }
@@ -1240,7 +1376,7 @@
         const rounds = championshipRoundPlans(championship);
         const points = races.reduce((total, race) => total + championshipPoints(championship, Number(race.position) || 0), 0);
         const wins = races.filter(race => Number(race.position) === 1).length;
-        const podiums = races.filter(race => Number(race.position) <= 3).length;
+        const podiums = races.filter(race => Number(race.position) >= 1 && Number(race.position) <= 3).length;
         const measuredIncidents = races.filter(race => race.incidents !== null && race.incidents !== undefined && Number.isFinite(Number(race.incidents)));
         const incidents = measuredIncidents.reduce((total, race) => total + Number(race.incidents), 0);
         const average = measuredIncidents.length ? (incidents / measuredIncidents.length).toFixed(1) : 'N/A';
@@ -1249,13 +1385,15 @@
           const review = races.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id));
           const scheduledAt = round.startTime ? new Date(round.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Time not set';
           const outcome = result
-            ? `P${Number(result.position) || '-'} · ${championshipPoints(championship, Number(result.position) || 0)} pts`
+            ? `${raceFinishLabel(result)} · ${championshipPoints(championship, Number(result.position) || 0)} pts`
             : review
               ? `Review: ${escapeHTML(review.track || 'Unknown track')} · ${escapeHTML(review.carModel || review.carClass || 'Unknown vehicle')}`
               : 'Upcoming';
           const resultControl = review
             ? `<button onclick="confirmCapturedRace('${escapeHTML(review.id)}','championship','${escapeHTML(championship.id)}','${escapeHTML(round.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Confirm result</button>`
-            : '';
+            : result
+              ? `<button onclick="openRaceResultEditor('${escapeHTML(result.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit result</button>`
+              : '';
           return `<div class="grid grid-cols-[3rem_1fr] gap-2 border-t border-gray-800 py-2 text-xs"><span class="text-gray-500 font-mono">R${round.roundNumber}</span><div class="min-w-0"><div class="flex justify-between gap-2"><strong class="text-white truncate">${escapeHTML(round.track)}</strong><span class="text-gray-400">${escapeHTML(scheduledAt)}</span></div><div class="flex justify-between gap-2 text-gray-400"><span class="truncate">${escapeHTML(round.vehicle)}</span><span class="text-right">${outcome} ${resultControl}</span></div></div></div>`;
         }).join('');
         const unassignedReviews = races.filter(race => race.needsReview && !race.suggestedRoundId).map(race =>
@@ -1445,6 +1583,11 @@
         };
         appState.racesHistory.unshift(entry);
         assignCapturedRace(entry);
+        const replacedMissedIndex = appState.racesHistory.findIndex(existing => existing !== entry && existing.source === 'auto-dnf' && (
+          (entry.eventId && String(existing.eventId || '') === String(entry.eventId)) ||
+          (entry.roundId && String(existing.roundId || '') === String(entry.roundId))
+        ));
+        if (replacedMissedIndex >= 0) appState.racesHistory.splice(replacedMissedIndex, 1);
         appState.stats.races += 1;
         if (position === 1) appState.stats.wins += 1;
         if (position <= 3) appState.stats.podiums += 1;
@@ -1483,6 +1626,7 @@
     }
 
     function renderApp() {
+      ensurePastCalendarDNFs();
       // Stats Grid
       document.getElementById('stat-races').innerText = appState.stats.races;
       document.getElementById('stat-wins').innerText = appState.stats.wins;
@@ -1506,7 +1650,7 @@
             <td class="p-3 text-gray-300">${escapeHTML(r.game || 'Unknown sim')}</td>
             <td class="p-3 font-bold text-white">${escapeHTML(r.track)}</td>
             <td class="p-3 text-gray-300">${escapeHTML(r.carModel || r.carClass || 'Unknown vehicle')}</td>
-            <td class="p-3 font-bold font-mono ${r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">P${r.position}</td>
+            <td class="p-3 font-bold font-mono ${r.status === 'DNF' ? 'text-neon-crimson' : r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">${raceFinishLabel(r)}</td>
             <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : 'Recorded'}</td>
           </tr>
         `).join('');
@@ -1575,6 +1719,9 @@
     window.onload = function() {
       renderApp();
       window.setInterval(renderNextScheduledRace, 1000);
+      window.setInterval(() => {
+        if (ensurePastCalendarDNFs()) renderApp();
+      }, 60000);
       if ('serviceWorker' in navigator && window.isSecureContext) {
         navigator.serviceWorker.register('sw.js').catch(error => {
           console.error("Service worker registration failed:", error);
