@@ -118,8 +118,6 @@ def scheduled_active_competition(events, championships, now=None):
             if not start or not (start - AUTO_ACTIVATION_LEAD <= now <= start + timedelta(hours=3)):
                 continue
             name = str(championship.get("name") or "Championship")
-            if championship.get("season"):
-                name += f" - {championship['season']}"
             candidates.append((start, {
                 "type": "championship",
                 "id": str(championship.get("id", "")),
@@ -423,7 +421,7 @@ class CompanionApp:
             labels = ["Career race"]
             self.competitions_by_label = {}
             for key, item in self.championships.items():
-                label = f"Championship: {item.get('name', 'Championship')} - {item.get('season', 'Season')} [{key}]"
+                label = f"Championship: {item.get('name', 'Championship')} [{key}]"
                 labels.append(label)
                 self.competitions_by_label[label] = {"type": "championship", "id": key, "name": item.get("name", "Championship")}
             for key, item in self.single_events.items():

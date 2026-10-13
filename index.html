@@ -577,7 +577,8 @@
       <div class="flex justify-between items-center border-b border-gray-800 pb-3"><h3 id="championship-modal-title" class="text-lg font-bold text-white"><i class="fa-solid fa-ranking-star text-neon-amber mr-2"></i>Create Championship</h3><button onclick="closeModal('create-championship-modal')" class="text-gray-400 hover:text-white" title="Close"><i class="fa-solid fa-xmark"></i></button></div>
       <form onsubmit="handleCreateChampionship(event)" class="space-y-4 text-xs">
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Series name</span><input id="championship-name-input" required maxlength="80" placeholder="e.g. SimGrid GT3 Cup" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
-        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Season</span><input id="championship-season-input" placeholder="Season 1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby name (optional)</span><input id="championship-lobby-name-input" type="text" maxlength="100" placeholder="Server / lobby name" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby password (optional)</span><input id="championship-lobby-password-input" type="password" maxlength="100" placeholder="Stored with your account" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship vehicle / class (same for every race)</span><input id="championship-vehicle-input" type="search" list="championship-known-vehicles" required placeholder="Search or enter vehicle" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
@@ -1094,7 +1095,7 @@
       if (!select) return;
       const selected = select.value;
       select.innerHTML = '<option value="">Career race (not in a championship)</option>' + appState.championships.map(championship =>
-        `<option value="${escapeHTML(championship.id)}">${escapeHTML(championship.name)}${championship.season ? ` - ${escapeHTML(championship.season)}` : ''}</option>`
+        `<option value="${escapeHTML(championship.id)}">${escapeHTML(championship.name)}</option>`
       ).join('');
       if (appState.championships.some(championship => String(championship.id) === selected)) select.value = selected;
       else if (appState.activeCompetition?.type === 'championship') select.value = String(appState.activeCompetition.id);
@@ -1105,7 +1106,7 @@
       const status = document.getElementById('active-competition-status');
       if (!select || !status) return;
       const options = [
-        ...appState.championships.map(item => ({ type: 'championship', id: item.id, name: `${item.name}${item.season ? ` - ${item.season}` : ''}` })),
+        ...appState.championships.map(item => ({ type: 'championship', id: item.id, name: item.name })),
         ...appState.events.map(item => ({ type: 'event', id: item.id, name: item.title }))
       ];
       select.innerHTML = '<option value="">No active competition</option>' + options.map(item =>
@@ -1297,7 +1298,7 @@
       const searchTerm = (document.getElementById('championship-search-input')?.value || '').trim().toLowerCase();
       const filteredChampionships = appState.championships.filter(championship => {
         const roundText = championshipRoundPlans(championship).map(round => `${round.track} ${round.vehicle}`).join(' ');
-        return `${championship.name} ${championship.game} ${championship.season} ${roundText}`.toLowerCase().includes(searchTerm);
+        return `${championship.name} ${championship.game} ${roundText}`.toLowerCase().includes(searchTerm);
       });
       if (!filteredChampionships.length) {
         if (appState.championships.length && searchTerm) {
@@ -1335,7 +1336,7 @@
           `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
         ).join('');
         return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
-          <div class="flex justify-between gap-3"><div class="min-w-0"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}${championship.season ? ` · ${escapeHTML(championship.season)}` : ''}</p></div><div class="flex items-start gap-2 shrink-0"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
+          <div class="flex justify-between gap-3"><div class="min-w-0"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}</p>${championship.lobbyName || championship.lobbyPassword ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${championship.lobbyName ? ` · ${escapeHTML(championship.lobbyName)}` : ''}</summary><div class="mt-1 flex items-center gap-2 text-gray-300"><span>Password:</span><code>${escapeHTML(championship.lobbyPassword || 'Not set')}</code>${championship.lobbyPassword ? `<button type="button" onclick="copyChampionshipLobbyPassword('${String(championship.id)}')" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>` : ''}</div><div class="flex items-start gap-2 shrink-0"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
           <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
@@ -1355,6 +1356,8 @@
       const form = document.getElementById('create-championship-modal').querySelector('form');
       form.reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-lobby-name-input').value = '';
+      document.getElementById('championship-lobby-password-input').value = '';
       document.getElementById('championship-vehicle-input').value = '';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-rounds-fields').innerHTML = '';
@@ -1373,7 +1376,8 @@
       }));
       document.getElementById('championship-name-input').value = championship.name || '';
       document.getElementById('championship-game-input').value = championship.game || 'Automobilista 2';
-      document.getElementById('championship-season-input').value = championship.season || '';
+      document.getElementById('championship-lobby-name-input').value = championship.lobbyName || '';
+      document.getElementById('championship-lobby-password-input').value = championship.lobbyPassword || '';
       document.getElementById('championship-vehicle-input').value = championship.vehicle || championshipRoundPlans(championship)[0]?.vehicle || '';
       document.getElementById('championship-rounds-input').value = championshipRoundCount(championship) || 1;
       document.getElementById('championship-rounds-fields').innerHTML = '';
@@ -1403,6 +1407,17 @@
       showToast(`Championship "${championship.name}" deleted.`);
     }
 
+    async function copyChampionshipLobbyPassword(championshipId) {
+      const championship = appState.championships.find(item => String(item.id) === String(championshipId));
+      if (!championship?.lobbyPassword) return;
+      try {
+        await navigator.clipboard.writeText(championship.lobbyPassword);
+        showToast('Lobby password copied.');
+      } catch (error) {
+        showToast('Clipboard access was blocked by the browser.', 'error');
+      }
+    }
+
     function handleCreateChampionship(event) {
       event.preventDefault();
       const existing = editingChampionshipId
@@ -1410,6 +1425,8 @@
         : null;
       const name = document.getElementById('championship-name-input').value.trim();
       const game = document.getElementById('championship-game-input').value.trim();
+      const lobbyName = document.getElementById('championship-lobby-name-input').value.trim();
+      const lobbyPassword = document.getElementById('championship-lobby-password-input').value;
       const vehicle = document.getElementById('championship-vehicle-input').value.trim();
       const roundCount = Math.max(1, Math.min(50, Number(document.getElementById('championship-rounds-input').value) || 1));
       const roundPlans = Array.from({ length: roundCount }, (_, index) => {
@@ -1443,8 +1460,9 @@
         id: championshipId,
         name,
         game,
+        lobbyName,
+        lobbyPassword,
         vehicle,
-        season: document.getElementById('championship-season-input').value.trim(),
         rounds: roundCount,
         roundPlans,
         points: DEFAULT_CHAMPIONSHIP_POINTS,
@@ -1455,13 +1473,15 @@
         const index = appState.championships.findIndex(item => String(item.id) === String(existing.id));
         appState.championships[index] = updatedChampionship;
         if (appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(existing.id)) {
-          appState.activeCompetition.name = `${name}${updatedChampionship.season ? ` - ${updatedChampionship.season}` : ''}`;
+          appState.activeCompetition.name = name;
         }
       } else {
         appState.championships.unshift(updatedChampionship);
       }
       document.getElementById('create-championship-modal').querySelector('form').reset();
       document.getElementById('championship-game-input').value = 'Automobilista 2';
+      document.getElementById('championship-lobby-name-input').value = '';
+      document.getElementById('championship-lobby-password-input').value = '';
       document.getElementById('championship-vehicle-input').value = '';
       document.getElementById('championship-rounds-input').value = '6';
       document.getElementById('championship-rounds-fields').innerHTML = '';

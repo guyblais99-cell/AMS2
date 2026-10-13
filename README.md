@@ -6,7 +6,7 @@ An Automobilista 2 race-events dashboard for planning championships, tracking ra
 
 Serve the repository root with a static host such as Vercel, or open `index.html` for local-only use. Sign-in and cloud sync require the Firebase settings in `firebase-config.js`, Firebase Email/Password Authentication, and Realtime Database.
 
-The dashboard focuses on total races, wins, podiums, average finish, race history, scheduled events, and championships with custom points. Each championship uses one shared vehicle/class, plus a planned track and local time slot for every round. Track and vehicle fields suggest values already seen in your history; the search field filters championships by series, round track, or vehicle. The existing dashboard next-race widget shows the earliest upcoming item and opens the full chronological calendar. The calendar combines single events and championship rounds. Use the **Active competition** selector for a manual override. Race results captured while monitoring is active are matched to uncompleted rounds by detected track and the shared championship vehicle, using race start time to distinguish repeated rounds. Mismatches remain visible on the championship/event card for confirmation in the HTML app. Races from the SimHub bridge include game, track, car model/class, and finish position; incident counts are not captured.
+The dashboard focuses on total races, wins, podiums, average finish, race history, scheduled events, and championships with fixed points scoring. Each championship uses one shared vehicle/class, optional lobby name/password, and a planned track and local time slot for every round. Track and vehicle fields suggest values already seen in your history; the search field filters championships by series, round track, or vehicle. The existing dashboard next-race widget shows the earliest upcoming item and opens the full chronological calendar. The calendar combines single events and championship rounds. Use the **Active competition** selector for a manual override. Race results captured while monitoring is active are matched to uncompleted rounds by detected track and the shared championship vehicle, using race start time to distinguish repeated rounds. Mismatches remain visible on the championship/event card for confirmation in the HTML app. Races from the SimHub bridge include game, track, car model/class, and finish position; incident counts are not captured.
 
 Restrict Realtime Database access to the signed-in account owner. A minimal ruleset for this app is:
 
@@ -24,6 +24,8 @@ Restrict Realtime Database access to the signed-in account owner. A minimal rule
 ```
 
 Do not use open read/write rules for a deployed app.
+
+Lobby passwords are stored in the signed-in user's Realtime Database record and are not end-to-end encrypted. Only save lobby credentials you are comfortable storing in that account.
 
 ## Windows Companion
 
