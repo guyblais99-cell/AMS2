@@ -1047,7 +1047,7 @@
         return;
       }
       title.textContent = next.title;
-      details.textContent = `${next.vehicle} · ${next.track} · ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+      details.textContent = `${next.vehicle} · ${next.track} · ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`;
       const lobby = next.championship || next.event;
       const lobbyName = String(lobby?.lobbyName || '').trim();
       const lobbyPassword = String(lobby?.lobbyPassword || '');
@@ -1104,7 +1104,7 @@
       if (highlight) {
         const focus = activeEntry || nextEntry;
         highlight.innerHTML = focus
-          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? 'border-neon-amber/40' : 'border-neon-cyan/30'}"><div><p class="text-[10px] font-mono uppercase ${activeEntry ? 'text-neon-amber' : 'text-neon-cyan'}">${activeEntry ? 'Currently active' : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} · ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</time></div>`
+          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? 'border-neon-amber/40' : 'border-neon-cyan/30'}"><div><p class="text-[10px] font-mono uppercase ${activeEntry ? 'text-neon-amber' : 'text-neon-cyan'}">${activeEntry ? 'Currently active' : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} · ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }))}</time></div>`
           : '<div class="carbon-card rounded-xl px-4 py-3 text-sm text-gray-400">No upcoming events or championship rounds.</div>';
       }
 
@@ -1126,7 +1126,7 @@
         const review = Boolean(entry.result?.needsReview);
         const status = isActive ? 'Activated' : review ? 'Needs confirmation' : entry.result ? entry.result.status === 'DNF' ? 'DNF' : `Completed · P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
         const when = Number.isFinite(entry.timestamp)
-          ? new Date(entry.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          ? new Date(entry.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
           : 'Time not set';
         const editAction = entry.result
           ? `<button type="button" onclick="openRaceResultEditor('${escapeHTML(entry.result.id)}')" class="shrink-0 text-[11px] text-neon-cyan hover:text-cyan-200 underline">Edit result</button>`
@@ -1431,7 +1431,7 @@
         const roundRows = rounds.map(round => {
           const result = races.find(race => String(race.roundId || '') === String(round.id));
           const review = races.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id));
-          const scheduledAt = round.startTime ? new Date(round.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Time not set';
+          const scheduledAt = round.startTime ? new Date(round.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Time not set';
           const outcome = result
             ? `${raceFinishLabel(result)} · ${championshipPoints(championship, Number(result.position) || 0)} pts`
             : review
