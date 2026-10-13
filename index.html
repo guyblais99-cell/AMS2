@@ -1054,7 +1054,7 @@
       if (lobbyDetails) {
         const lobbyWasOpen = lobbyDetails.querySelector('details')?.open || false;
         lobbyDetails.innerHTML = lobbyName || lobbyPassword
-          ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` · ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 text-gray-300">${lobbyName ? `<div><span class="text-gray-400">Lobby:</span> <strong>${escapeHTML(lobbyName)}</strong></div>` : ''}${lobbyPassword ? `<div class="mt-1"><span class="text-gray-400">Password:</span> <code class="ml-1">${escapeHTML(lobbyPassword)}</code><button type="button" onclick="copyNextRaceLobbyPassword()" class="ml-2 text-neon-cyan underline">Copy</button></div>` : ''}</div></details>`
+          ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` · ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 text-gray-300">${lobbyName ? `<div><span class="text-gray-400">Lobby:</span> <strong>${escapeHTML(lobbyName)}</strong></div>` : ''}${lobbyPassword ? `<div class="mt-1"><span class="text-gray-400">Password:</span>&nbsp;<code>${escapeHTML(lobbyPassword)}</code>&nbsp;&nbsp;<button type="button" onclick="copyNextRaceLobbyPassword()" class="text-neon-cyan underline">Copy</button></div>` : ''}</div></details>`
           : '';
         if (lobbyWasOpen) {
           const lobbyDisclosure = lobbyDetails.querySelector('details');
