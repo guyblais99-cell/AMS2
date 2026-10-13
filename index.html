@@ -568,10 +568,15 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800 pb-1">
         <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Events</h2>
         <div class="flex items-center gap-2 self-end sm:self-auto">
-          <button onclick="openModal('create-event-modal')" class="px-2 py-1 rounded bg-carbon-700 text-gray-200 border border-gray-700 font-bold text-[10px] uppercase hover:bg-carbon-600 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-calendar-plus"></i> New Event</button>
+          <button onclick="startNewEvent()" class="px-2 py-1 rounded bg-carbon-700 text-gray-200 border border-gray-700 font-bold text-[10px] uppercase hover:bg-carbon-600 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-calendar-plus"></i> New Event</button>
           <button onclick="startNewChampionship()" class="px-2 py-1 rounded bg-neon-cyan text-black font-bold text-[10px] uppercase hover:bg-cyan-300 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-plus"></i> New Championship</button>
         </div>
       </div>
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold text-gray-400 uppercase">Single Events</h3>
+        <div id="single-events-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </div>
+      <h3 class="text-xs font-bold text-gray-400 uppercase">Championships</h3>
       <div class="carbon-card rounded-xl p-4 flex items-center gap-3">
         <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
         <input id="championship-search-input" type="search" oninput="filterChampionships()" placeholder="Search championships, rounds, tracks, or vehicles..." class="w-full bg-transparent text-sm text-white focus:outline-none" />
@@ -676,7 +681,7 @@
   <div id="create-event-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30">
       <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <h3 id="event-modal-title" class="text-lg font-bold text-white flex items-center gap-2">
           <i class="fa-solid fa-calendar-plus text-neon-cyan"></i> Schedule AMS2 Multiplayer Race
         </h3>
         <button onclick="closeModal('create-event-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -723,7 +728,7 @@
 
         <div class="pt-2 flex justify-end gap-3">
           <button type="button" onclick="closeModal('create-event-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Schedule Event</button>
+          <button id="event-save-button" type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300 shadow-lg shadow-neon-cyan/20">Schedule Event</button>
         </div>
       </form>
     </div>
@@ -819,6 +824,7 @@
     }
 
     let appState = readLocalState();
+    let editingEventId = null;
     let editingChampionshipId = null;
     let editingRaceResultId = null;
     let championshipRoundDraft = [];
@@ -1195,8 +1201,77 @@
       }
     }
 
+    function renderSingleEvents() {
+      const container = document.getElementById('single-events-grid');
+      if (!container) return;
+      if (!appState.events.length) {
+        container.innerHTML = '<p class="text-sm text-gray-500 md:col-span-2 xl:col-span-3">No single events yet. Create one with New Event.</p>';
+        return;
+      }
+      const events = [...appState.events].sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime());
+      container.innerHTML = events.map(event => {
+        const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id));
+        const timestamp = new Date(event.startTime).getTime();
+        const when = Number.isFinite(timestamp)
+          ? new Date(timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
+          : 'Time not set';
+        const status = result ? `Recorded · ${raceFinishLabel(result)}` : event.scheduled ? 'On calendar' : 'Auto-activation off';
+        return `<article class="carbon-card rounded-xl p-4 space-y-3 border border-gray-800">
+          <div class="flex justify-between gap-3"><div class="min-w-0"><span class="text-[10px] uppercase font-mono text-neon-cyan">Single event</span><h4 class="text-base font-bold text-white truncate">${escapeHTML(event.title)}</h4><p class="text-xs text-gray-400 truncate">${escapeHTML(event.track)} · ${escapeHTML(event.carClass)}</p></div><div class="flex items-start gap-2 shrink-0"><button type="button" onclick="editSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-white" title="Edit event" aria-label="Edit event"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete event" aria-label="Delete event"><i class="fa-solid fa-trash"></i></button></div></div>
+          <div class="flex flex-wrap justify-between gap-2 text-xs text-gray-400"><span>${escapeHTML(when)} · ${escapeHTML(event.duration || '45 min')}</span><span>${escapeHTML(status)}</span></div>
+          ${event.lobbyName ? `<p class="text-xs text-gray-500 truncate">Lobby: ${escapeHTML(event.lobbyName)}</p>` : ''}
+        </article>`;
+      }).join('');
+    }
+
+    function setEventModalMode(isEditing) {
+      document.getElementById('event-modal-title').innerHTML = `<i class="fa-solid fa-calendar-plus text-neon-cyan"></i> ${isEditing ? 'Edit Single Event' : 'Schedule AMS2 Multiplayer Race'}`;
+      document.getElementById('event-save-button').textContent = isEditing ? 'Save Changes' : 'Schedule Event';
+    }
+
+    function startNewEvent() {
+      editingEventId = null;
+      document.getElementById('create-event-form').reset();
+      document.getElementById('event-duration-input').value = '45';
+      setEventModalMode(false);
+      openModal('create-event-modal');
+    }
+
+    function editSingleEvent(eventId) {
+      const event = appState.events.find(item => String(item.id) === String(eventId));
+      if (!event) return;
+      editingEventId = String(event.id);
+      document.getElementById('event-title-input').value = event.title || '';
+      document.getElementById('event-track-input').value = event.track || '';
+      document.getElementById('event-class-input').value = event.carClass || '';
+      document.getElementById('event-duration-input').value = String(event.duration || '45').match(/\d+/)?.[0] || '45';
+      document.getElementById('event-time-input').value = toLocalDateTimeInput(event.startTime);
+      document.getElementById('event-lobby-name-input').value = event.lobbyName || '';
+      document.getElementById('event-lobby-password-input').value = event.lobbyPassword || '';
+      setEventModalMode(true);
+      openModal('create-event-modal');
+    }
+
+    function deleteSingleEvent(eventId) {
+      const event = appState.events.find(item => String(item.id) === String(eventId));
+      if (!event) return;
+      const linkedRaces = appState.racesHistory.filter(race => String(race.eventId || '') === String(event.id));
+      const note = linkedRaces.length ? ` ${linkedRaces.length} linked race result(s) will remain in Recent Race Results.` : '';
+      if (!window.confirm(`Delete "${event.title}"?${note}`)) return;
+      appState.events = appState.events.filter(item => String(item.id) !== String(event.id));
+      for (const race of linkedRaces) delete race.eventId;
+      if (appState.activeCompetition?.type === 'event' && String(appState.activeCompetition.id) === String(event.id)) {
+        appState.activeCompetition = null;
+      }
+      saveState();
+      showToast(`Event "${event.title}" deleted.`);
+    }
+
     function handleCreateEventSubmit(event) {
       event.preventDefault();
+      const existing = editingEventId === null
+        ? null
+        : appState.events.find(item => String(item.id) === String(editingEventId));
       const title = document.getElementById('event-title-input').value.trim();
       const track = document.getElementById('event-track-input').value.trim();
       const carClass = document.getElementById('event-class-input').value.trim();
@@ -1207,24 +1282,43 @@
         showToast('Complete the event title, track, class, and start time.', 'error');
         return;
       }
+      if (editingEventId !== null && !existing) {
+        showToast('That event is no longer available to edit.', 'error');
+        return;
+      }
+      const startDate = new Date(startTime);
+      if (!Number.isFinite(startDate.getTime())) {
+        showToast('Enter a valid event date and time.', 'error');
+        return;
+      }
+      const now = new Date().toISOString();
       const eventRecord = {
-        id: Date.now(),
+        ...(existing || {}),
+        id: existing?.id ?? Date.now(),
         title,
         track,
         carClass,
         lobbyName,
         lobbyPassword,
-        duration: `${Number(document.getElementById('event-duration-input').value) || 45} min`,
-        startTime: new Date(startTime).toISOString(),
-        scheduled: true,
-        createdAt: new Date().toISOString()
+        duration: `${Math.max(5, Math.min(1440, Number(document.getElementById('event-duration-input').value) || 45))} min`,
+        startTime: startDate.toISOString(),
+        scheduled: existing?.scheduled ?? true,
+        createdAt: existing?.createdAt || now,
+        updatedAt: now
       };
-      appState.events.unshift(eventRecord);
+      if (existing) {
+        const index = appState.events.findIndex(item => String(item.id) === String(existing.id));
+        appState.events[index] = eventRecord;
+      } else {
+        appState.events.unshift(eventRecord);
+      }
       document.getElementById('create-event-form').reset();
       document.getElementById('event-duration-input').value = '45';
+      editingEventId = null;
+      setEventModalMode(false);
       closeModal('create-event-modal');
       saveState();
-      showToast(`Event "${title}" created. Set it active to capture its races.`);
+      showToast(existing ? `Event "${title}" updated.` : `Event "${title}" created.`);
     }
 
     function championshipPoints(championship, position) {
@@ -1760,6 +1854,7 @@
       // Render Subcomponents
       renderEvents();
       renderNextScheduledRace();
+      renderSingleEvents();
       renderChampionships();
     }
 
