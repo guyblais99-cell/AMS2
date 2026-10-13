@@ -429,14 +429,16 @@ class CompanionApp:
                 labels.append(label)
                 self.competitions_by_label[label] = {"type": "event", "id": key, "name": item.get("title", "Event")}
             self.championship_combo["values"] = labels
-            active = normalize_active_competition(state.get("activeCompetition"))
-            self.active_competition = None
+            self.active_competition = scheduled_active_competition(
+                list(self.single_events.values()),
+                list(self.championships.values()),
+            )
             active_label = "Career race"
-            if isinstance(active, dict):
-                active_key = f"{active.get('type')}:{active.get('id')}"
+            if isinstance(self.active_competition, dict):
+                active_key = f"{self.active_competition.get('type')}:{self.active_competition.get('id')}"
                 for label, competition in self.competitions_by_label.items():
                     if f"{competition['type']}:{competition['id']}" == active_key:
-                        self.active_competition = {**competition, **active}
+                        self.active_competition = {**competition, **self.active_competition}
                         active_label = label
                         break
             self.active_competition_var.set(
@@ -556,7 +558,7 @@ class CompanionApp:
                     )))
                     next_schedule_refresh = now_monotonic + SCHEDULE_REFRESH_SECONDS
                 scheduled = scheduled_active_competition(events, championships)
-                updated_competition = remote_competition if remote_competition and remote_competition.get("source") != "schedule" else scheduled
+                updated_competition = scheduled
                 if updated_competition != remote_competition:
                     request_json(active_url, updated_competition, "PUT")
                 if updated_competition != competition:

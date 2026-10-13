@@ -147,6 +147,7 @@
         <!-- Quick Telemetry Status Pill (Mobile View toggle inside header) -->
         <div class="flex items-center gap-2 md:hidden">
           <button id="signout-btn-mobile" onclick="window.appSignOut?.()" class="hidden px-3 py-1.5 rounded-lg bg-carbon-700 text-gray-300 border border-gray-700 text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></button>
+          <button onclick="openModal('profile-modal')" class="px-3 py-1.5 rounded-lg bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs" title="Edit race totals"><i class="fa-solid fa-chart-simple"></i></button>
         </div>
       </div>
 
@@ -166,6 +167,7 @@
       <!-- Action Buttons -->
       <div class="hidden md:flex items-center gap-3">
         <button id="signout-btn" onclick="window.appSignOut?.()" class="hidden px-4 py-2 rounded-xl bg-carbon-700 text-gray-300 border border-gray-700 font-bold text-xs" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i> <span id="signout-email"></span></button>
+        <button onclick="openModal('profile-modal')" class="px-4 py-2 rounded-xl bg-carbon-700 text-neon-cyan border border-neon-cyan/30 font-bold text-xs flex items-center gap-2"><i class="fa-solid fa-chart-simple"></i> Edit Totals</button>
       </div>
 
     </div>
@@ -173,11 +175,6 @@
 
   <!-- MAIN APP CONTENT WRAPPER -->
   <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 space-y-6">
-    <section class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3 border border-neon-cyan/25" aria-label="Active competition">
-      <div class="flex-1 min-w-0"><h2 class="text-sm font-bold text-white">Active competition</h2><p id="active-competition-status" class="text-xs text-gray-400">No manual selection. Scheduled items auto-activate 10 minutes before start while the companion is monitoring.</p></div>
-      <select id="active-competition-select" onchange="setActiveCompetition(this.value)" class="w-full sm:w-auto sm:min-w-64 bg-carbon-900 text-white p-2.5 rounded-lg border border-gray-800 focus:outline-none focus:border-neon-cyan" aria-label="Select active competition"><option value="">No active competition</option></select>
-    </section>
-
     <!-- TAB 1: DASHBOARD -->
     <section id="tab-dashboard" class="tab-content space-y-6">
       
@@ -674,23 +671,15 @@
   <div id="profile-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="carbon-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-neon-cyan/30 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-        <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-pen text-neon-cyan"></i> Edit Profile & Stats</h3>
+        <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-chart-simple text-neon-cyan"></i> Edit Race Totals</h3>
         <button onclick="closeModal('profile-modal')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
-      <form onsubmit="saveProfile(event)" class="grid grid-cols-2 gap-3 text-xs">
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Driver Name</span><input id="pf-name" type="text" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Title / Class</span><input id="pf-title" type="text" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Level</span><input id="pf-level" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Current XP</span><input id="pf-xp" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">XP for Next Level</span><input id="pf-nextXp" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Safety Rating</span><input id="pf-safetyRating" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Skill Rating</span><input id="pf-skillRating" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Total Races</span><input id="pf-races" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
+      <p class="text-xs text-gray-400">Adjust starting totals; captured races continue adding to these counts.</p>
+      <form onsubmit="saveProfile(event)" class="grid grid-cols-3 gap-3 text-xs">
+        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Races</span><input id="pf-races" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Wins</span><input id="pf-wins" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Podiums</span><input id="pf-podiums" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Clean Races</span><input id="pf-cleanRaces" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <label class="block"><span class="block text-gray-300 font-semibold mb-1">Total Incidents</span><input id="pf-totalIncidents" type="number" min="0" step="1" class="w-full bg-carbon-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-neon-cyan" /></label>
-        <div class="col-span-2 pt-2 flex justify-end gap-3">
+        <div class="col-span-3 pt-2 flex justify-end gap-3">
           <button type="button" onclick="closeModal('profile-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
           <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300">Save</button>
         </div>
@@ -853,10 +842,7 @@
     // ----------------------------------------------------
     function openModal(modalId) {
       if (modalId === 'profile-modal') {
-        for (const key of ['name', 'title', 'level', 'xp', 'nextXp', 'safetyRating', 'skillRating']) {
-          document.getElementById(`pf-${key}`).value = appState.driver[key];
-        }
-        for (const key of ['races', 'wins', 'podiums', 'cleanRaces', 'totalIncidents']) {
+        for (const key of ['races', 'wins', 'podiums']) {
           document.getElementById(`pf-${key}`).value = appState.stats[key];
         }
       }
@@ -1090,57 +1076,6 @@
       showToast(`Event "${title}" created. Set it active to capture its races.`);
     }
 
-    function renderChampionshipOptions() {
-      const select = document.getElementById('modal-championship-input');
-      if (!select) return;
-      const selected = select.value;
-      select.innerHTML = '<option value="">Career race (not in a championship)</option>' + appState.championships.map(championship =>
-        `<option value="${escapeHTML(championship.id)}">${escapeHTML(championship.name)}</option>`
-      ).join('');
-      if (appState.championships.some(championship => String(championship.id) === selected)) select.value = selected;
-      else if (appState.activeCompetition?.type === 'championship') select.value = String(appState.activeCompetition.id);
-    }
-
-    function renderActiveCompetition() {
-      const select = document.getElementById('active-competition-select');
-      const status = document.getElementById('active-competition-status');
-      if (!select || !status) return;
-      const options = [
-        ...appState.championships.map(item => ({ type: 'championship', id: item.id, name: item.name })),
-        ...appState.events.map(item => ({ type: 'event', id: item.id, name: item.title }))
-      ];
-      select.innerHTML = '<option value="">No active competition</option>' + options.map(item =>
-        `<option value="${item.type}:${escapeHTML(item.id)}">${item.type === 'event' ? 'Event' : 'Championship'}: ${escapeHTML(item.name)}</option>`
-      ).join('');
-      const active = appState.activeCompetition;
-      const activeValue = active ? `${active.type}:${active.id}` : '';
-      if ([...select.options].some(option => option.value === activeValue)) select.value = activeValue;
-      else if (active) {
-        appState.activeCompetition = null;
-        select.value = '';
-      }
-      status.textContent = appState.activeCompetition
-        ? appState.activeCompetition.source === 'schedule'
-          ? `Automatically activated from the calendar: ${appState.activeCompetition.name}.`
-          : `Race results will be captured for ${appState.activeCompetition.name}.`
-        : 'No manual selection. Scheduled items auto-activate 10 minutes before start while the companion is monitoring.';
-    }
-
-    function setActiveCompetition(value) {
-      if (!value) {
-        appState.activeCompetition = null;
-      } else {
-        const separator = value.indexOf(':');
-        const type = value.slice(0, separator);
-        const id = value.slice(separator + 1);
-        const list = type === 'championship' ? appState.championships : type === 'event' ? appState.events : [];
-        const item = list.find(candidate => String(candidate.id) === id);
-        appState.activeCompetition = item ? { type, id, name: type === 'event' ? item.title : item.name, source: 'manual' } : null;
-      }
-      saveState();
-      showToast(appState.activeCompetition ? `Active competition: ${appState.activeCompetition.name}` : 'Race capture paused.');
-    }
-
     function championshipPoints(championship, position) {
       return DEFAULT_CHAMPIONSHIP_POINTS[position - 1] || 0;
     }
@@ -1317,7 +1252,6 @@
         const measuredIncidents = races.filter(race => race.incidents !== null && race.incidents !== undefined && Number.isFinite(Number(race.incidents)));
         const incidents = measuredIncidents.reduce((total, race) => total + Number(race.incidents), 0);
         const average = measuredIncidents.length ? (incidents / measuredIncidents.length).toFixed(1) : 'N/A';
-        const isActive = appState.activeCompetition?.type === 'championship' && String(appState.activeCompetition.id) === String(championship.id);
         const roundRows = rounds.map(round => {
           const result = races.find(race => String(race.roundId || '') === String(round.id));
           const review = races.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id));
@@ -1340,7 +1274,6 @@
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
           <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
-          <button onclick="setActiveCompetition('championship:${escapeHTML(championship.id)}')" class="w-full py-2 rounded-lg text-xs font-bold uppercase ${isActive ? 'bg-neon-amber/20 text-neon-amber border border-neon-amber/40' : 'bg-carbon-700 hover:bg-carbon-600 text-white border border-gray-700'}"><i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-flag-checkered'} mr-2"></i>${isActive ? 'Active capture championship' : 'Set as active championship'}</button>
         </article>`;
       }).join('');
     }
@@ -1594,8 +1527,6 @@
       renderEvents();
       renderNextScheduledRace();
       renderChampionships();
-      renderChampionshipOptions();
-      renderActiveCompetition();
     }
 
     function renderRatingMilestones() {
@@ -1618,19 +1549,13 @@
 
     function saveProfile(e) {
       e.preventDefault();
-      const num = (key, min = 0) => Math.max(min, parseInt(document.getElementById(`pf-${key}`).value, 10) || 0);
-      const name = document.getElementById('pf-name').value.trim();
-      if (name) appState.driver.name = name;
-      appState.driver.title = document.getElementById('pf-title').value.trim() || appState.driver.title;
-      appState.driver.level = num('level', 1);
-      appState.driver.xp = num('xp');
-      appState.driver.nextXp = num('nextXp', 1);
-      appState.driver.safetyRating = num('safetyRating');
-      appState.driver.skillRating = num('skillRating');
-      for (const key of ['races', 'wins', 'podiums', 'cleanRaces', 'totalIncidents']) appState.stats[key] = num(key);
+      const num = key => Math.max(0, parseInt(document.getElementById(`pf-${key}`).value, 10) || 0);
+      appState.stats.races = num('races');
+      appState.stats.wins = Math.min(appState.stats.races, num('wins'));
+      appState.stats.podiums = Math.max(appState.stats.wins, Math.min(appState.stats.races, num('podiums')));
       closeModal('profile-modal');
       saveState();
-      showToast("Profile and stats updated.");
+      showToast("Race totals updated.");
     }
 
     function saveRatingOverrides() {
