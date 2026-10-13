@@ -92,6 +92,41 @@
       overscroll-behavior: contain;
     }
 
+    .championship-round-count {
+      display: flex;
+    }
+
+    .championship-round-count > input {
+      min-width: 0;
+      width: 100%;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    .championship-round-count-controls {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .championship-round-count-controls button {
+      flex: 1;
+      width: 2.5rem;
+      padding: 0 0.5rem;
+      color: #CBD5E1;
+      background: #1F2937;
+      border: 1px solid #4B5563;
+      cursor: pointer;
+    }
+
+    .championship-round-count-controls button:first-child {
+      border-radius: 0 0.5rem 0 0;
+    }
+
+    .championship-round-count-controls button:last-child {
+      border-top: 0;
+      border-radius: 0 0 0.5rem 0;
+    }
+
     #events-grid-container {
       display: flex;
       flex-direction: column;
@@ -181,7 +216,7 @@
           <i class="fa-solid fa-gauge-high"></i> Dashboard
         </button>
         <button onclick="switchTab('championships')" id="nav-championships" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
-          <i class="fa-solid fa-ranking-star"></i> Championships
+          <i class="fa-solid fa-ranking-star"></i> Events
         </button>
         <button onclick="switchTab('events')" id="nav-events" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-calendar-days"></i> Race Calendar
@@ -530,9 +565,12 @@
 
     <!-- CHAMPIONSHIPS -->
     <section id="tab-championships" class="tab-content hidden space-y-6">
-      <div class="flex items-center justify-between gap-2 border-b border-gray-800 pb-1">
-        <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Championships</h2>
-        <button onclick="startNewChampionship()" class="px-2 py-1 rounded bg-neon-cyan text-black font-bold text-[10px] uppercase hover:bg-cyan-300 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-plus"></i> New Championship</button>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800 pb-1">
+        <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Events</h2>
+        <div class="flex items-center gap-2 self-end sm:self-auto">
+          <button onclick="openModal('create-event-modal')" class="px-2 py-1 rounded bg-carbon-700 text-gray-200 border border-gray-700 font-bold text-[10px] uppercase hover:bg-carbon-600 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-calendar-plus"></i> New Event</button>
+          <button onclick="startNewChampionship()" class="px-2 py-1 rounded bg-neon-cyan text-black font-bold text-[10px] uppercase hover:bg-cyan-300 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-plus"></i> New Championship</button>
+        </div>
       </div>
       <div class="carbon-card rounded-xl p-4 flex items-center gap-3">
         <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
@@ -544,12 +582,8 @@
     <!-- TAB 4: MULTIPLAYER RACE SCHEDULER & CALENDAR -->
     <section id="tab-events" class="tab-content hidden space-y-6">
       
-      <!-- Events Header -->
       <div class="flex items-center justify-between gap-2 border-b border-gray-800 pb-1">
         <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-neon-cyan"></i> Race Calendar</h2>
-        <button onclick="openModal('create-event-modal')" class="px-2 py-1 rounded bg-neon-cyan text-black font-bold text-[10px] uppercase hover:bg-cyan-300 flex items-center gap-1.5 shrink-0">
-          <i class="fa-solid fa-calendar-plus"></i> New Event
-        </button>
       </div>
 
       <div id="next-event-highlight"></div>
@@ -595,7 +629,7 @@
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby name (optional)</span><input id="championship-lobby-name-input" type="text" maxlength="100" placeholder="Server / lobby name" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby password (optional)</span><input id="championship-lobby-password-input" type="password" maxlength="100" placeholder="Stored with your account" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship vehicle / class (same for every race)</span><input id="championship-vehicle-input" type="search" list="championship-known-vehicles" required placeholder="Search or enter vehicle" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
-        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><div class="championship-round-count"><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="championship-round-count-controls"><button type="button" onclick="adjustChampionshipRoundCount(1)" aria-label="Increase number of races"><i class="fa-solid fa-chevron-up"></i></button><button type="button" onclick="adjustChampionshipRoundCount(-1)" aria-label="Decrease number of races"><i class="fa-solid fa-chevron-down"></i></button></span></div></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
         <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button id="championship-save-button" type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
@@ -1367,6 +1401,16 @@
 
     function filterChampionships() {
       renderChampionships();
+    }
+
+    function adjustChampionshipRoundCount(change) {
+      const input = document.getElementById('championship-rounds-input');
+      if (!input) return;
+      const minimum = Number(input.min) || 1;
+      const maximum = Number(input.max) || 50;
+      const current = Number(input.value);
+      input.value = String(Math.max(minimum, Math.min(maximum, (Number.isFinite(current) ? current : minimum) + change)));
+      renderChampionshipRoundInputs();
     }
 
     function renderChampionshipRoundInputs() {
