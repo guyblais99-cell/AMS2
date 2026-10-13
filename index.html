@@ -1052,9 +1052,14 @@
       const lobbyName = String(lobby?.lobbyName || '').trim();
       const lobbyPassword = String(lobby?.lobbyPassword || '');
       if (lobbyDetails) {
+        const lobbyWasOpen = lobbyDetails.querySelector('details')?.open || false;
         lobbyDetails.innerHTML = lobbyName || lobbyPassword
           ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` · ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-gray-300">${lobbyName ? `<span>Lobby: <strong>${escapeHTML(lobbyName)}</strong></span>` : ''}${lobbyPassword ? `<span>Password:</span><code>${escapeHTML(lobbyPassword)}</code><button type="button" onclick="copyNextRaceLobbyPassword()" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>`
           : '';
+        if (lobbyWasOpen) {
+          const lobbyDisclosure = lobbyDetails.querySelector('details');
+          if (lobbyDisclosure) lobbyDisclosure.open = true;
+        }
       }
       let secondsRemaining = Math.max(0, Math.floor((next.timestamp - now) / 1000));
       const days = Math.floor(secondsRemaining / 86400);
