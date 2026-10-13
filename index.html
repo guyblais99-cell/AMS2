@@ -378,6 +378,7 @@
             </div>
             <h3 id="next-event-title" class="text-lg font-bold text-white">No upcoming races</h3>
             <p id="next-event-class" class="text-xs text-gray-400 font-mono">Your scheduled events and championship rounds appear here.</p>
+            <div id="next-event-lobby"></div>
           </div>
 
           <!-- Countdown Display -->
@@ -672,6 +673,17 @@
           <div>
             <label class="block text-gray-300 font-semibold mb-1">Date & Time</label>
             <input type="datetime-local" id="event-time-input" required class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Lobby Name <span class="font-normal text-gray-500">(optional)</span></label>
+            <input type="text" id="event-lobby-name-input" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
+          </div>
+          <div>
+            <label class="block text-gray-300 font-semibold mb-1">Lobby Password <span class="font-normal text-gray-500">(optional)</span></label>
+            <input type="text" id="event-lobby-password-input" autocomplete="off" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" />
           </div>
         </div>
 
@@ -1019,6 +1031,7 @@
     function renderNextScheduledRace() {
       const title = document.getElementById('next-event-title');
       const details = document.getElementById('next-event-class');
+      const lobbyDetails = document.getElementById('next-event-lobby');
       const countdown = document.getElementById('countdown-timer');
       const count = document.getElementById('next-event-count');
       if (!title || !details || !countdown || !count) return;
@@ -1029,11 +1042,20 @@
       if (!next) {
         title.textContent = 'No upcoming races';
         details.textContent = 'Create an event or add championship rounds in the calendar.';
+        if (lobbyDetails) lobbyDetails.innerHTML = '';
         countdown.textContent = '-- : -- : -- : --';
         return;
       }
       title.textContent = next.title;
       details.textContent = `${next.vehicle} · ${next.track} · ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+      const lobby = next.championship || next.event;
+      const lobbyName = String(lobby?.lobbyName || '').trim();
+      const lobbyPassword = String(lobby?.lobbyPassword || '');
+      if (lobbyDetails) {
+        lobbyDetails.innerHTML = lobbyName || lobbyPassword
+          ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` · ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-gray-300">${lobbyName ? `<span>Lobby: <strong>${escapeHTML(lobbyName)}</strong></span>` : ''}${lobbyPassword ? `<span>Password:</span><code>${escapeHTML(lobbyPassword)}</code><button type="button" onclick="copyNextRaceLobbyPassword()" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>`
+          : '';
+      }
       let secondsRemaining = Math.max(0, Math.floor((next.timestamp - now) / 1000));
       const days = Math.floor(secondsRemaining / 86400);
       secondsRemaining %= 86400;
@@ -1042,6 +1064,19 @@
       const minutes = Math.floor(secondsRemaining / 60);
       const seconds = secondsRemaining % 60;
       countdown.textContent = `${String(days).padStart(2, '0')}d : ${String(hours).padStart(2, '0')}h : ${String(minutes).padStart(2, '0')}m : ${String(seconds).padStart(2, '0')}s`;
+    }
+
+    async function copyNextRaceLobbyPassword() {
+      const now = Date.now();
+      const next = buildCalendarEntries().find(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
+      const password = (next?.championship || next?.event)?.lobbyPassword;
+      if (!password) return;
+      try {
+        await navigator.clipboard.writeText(String(password));
+        showToast('Lobby password copied.');
+      } catch (error) {
+        showToast('Clipboard access was blocked by the browser.', 'error');
+      }
     }
 
     function renderEvents() {
@@ -1127,6 +1162,8 @@
       const track = document.getElementById('event-track-input').value.trim();
       const carClass = document.getElementById('event-class-input').value.trim();
       const startTime = document.getElementById('event-time-input').value;
+      const lobbyName = document.getElementById('event-lobby-name-input').value.trim();
+      const lobbyPassword = document.getElementById('event-lobby-password-input').value;
       if (!title || !track || !carClass || !startTime) {
         showToast('Complete the event title, track, class, and start time.', 'error');
         return;
@@ -1136,6 +1173,8 @@
         title,
         track,
         carClass,
+        lobbyName,
+        lobbyPassword,
         duration: `${Number(document.getElementById('event-duration-input').value) || 45} min`,
         startTime: new Date(startTime).toISOString(),
         scheduled: true,
