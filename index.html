@@ -1251,7 +1251,10 @@
         const scheduleAction = entry.type === 'event' && !entry.result
           ? `<button onclick="toggleScheduleEvent(${Number(entry.id) || 0})" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${entry.scheduled ? 'bg-neon-green/15 text-neon-green border border-neon-green/30' : 'bg-carbon-700 text-gray-300 border border-gray-700'}">${entry.scheduled ? 'Auto-activation on' : 'Enable auto-activation'}</button>`
           : '';
-        const actions = `${editAction}${scheduleAction}`;
+        const confirmAction = review && entry.type === 'event'
+          ? `<button type="button" onclick="confirmCapturedRace('${escapeHTML(entry.result.id)}','event','${escapeHTML(entry.id)}')" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold bg-neon-amber/15 text-neon-amber border border-neon-amber/30">Confirm &amp; update details</button>`
+          : '';
+        const actions = `${confirmAction}${editAction}${scheduleAction}`;
         return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isActive ? 'border-neon-amber' : isNext ? 'border-neon-cyan/50' : ''}">
           <time class="calendar-agenda-time text-xs font-mono text-gray-400">${escapeHTML(when)}</time>
           <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] text-neon-amber font-bold">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} · ${escapeHTML(entry.vehicle)}</p></div>
@@ -1485,11 +1488,22 @@
           championship.rounds = championship.roundPlans.length;
         }
         if (!round) return;
+        if (!round.addedFromResult) {
+          if (race.track && race.track !== 'Unknown track') round.track = race.track;
+          const detectedVehicle = race.carModel || (race.carClass !== 'Unknown class' ? race.carClass : '');
+          if (detectedVehicle) round.vehicle = detectedVehicle;
+        }
         race.championshipId = String(competitionId);
         race.eventId = '';
         race.roundId = round.id;
         race.roundNumber = round.roundNumber;
       } else if (competitionType === 'event') {
+        const plannedEvent = appState.events.find(item => String(item.id) === String(competitionId));
+        if (plannedEvent) {
+          if (race.track && race.track !== 'Unknown track') plannedEvent.track = race.track;
+          const detectedVehicle = race.carModel || (race.carClass !== 'Unknown class' ? race.carClass : '');
+          if (detectedVehicle) plannedEvent.carClass = detectedVehicle;
+        }
         race.eventId = String(competitionId);
         race.championshipId = '';
       }

@@ -95,8 +95,10 @@ def rows_from_firebase(value):
     return []
 
 
-def scheduled_active_competition(events, championships, now=None):
+def scheduled_active_competition(events, championships, now=None, completed=()):
+    """Stay active for the whole event duration; after that only until a result is recorded (3h cap)."""
     now = now or datetime.now(timezone.utc)
+    completed = set(completed)
     candidates = []
     for event in rows_from_firebase(events):
         if not event.get("scheduled"):
@@ -106,7 +108,11 @@ def scheduled_active_competition(events, championships, now=None):
             continue
         duration_match = re.search(r"\d+", str(event.get("duration", "45")))
         duration_minutes = int(duration_match.group()) if duration_match else 45
-        end = start + timedelta(minutes=max(5, duration_minutes) + 30)
+        min_end = start + timedelta(minutes=max(5, duration_minutes))
+        if f"event:{event.get('id', '')}" in completed:
+            end = min_end
+        else:
+            end = max(min_end + timedelta(minutes=30), start + timedelta(hours=3))
         if start - AUTO_ACTIVATION_LEAD <= now <= end:
             candidates.append((start, {"type": "event", "id": str(event.get("id", "")),
                                        "name": str(event.get("title") or "Scheduled event"),
@@ -116,6 +122,8 @@ def scheduled_active_competition(events, championships, now=None):
         for round_plan in rows_from_firebase(championship.get("roundPlans")):
             start = parse_schedule_time(round_plan.get("startTime"))
             if not start or not (start - AUTO_ACTIVATION_LEAD <= now <= start + timedelta(hours=3)):
+                continue
+            if now > start + timedelta(minutes=45) and f"championship:{championship.get('id', '')}:{round_plan.get('id', '')}" in completed:
                 continue
             name = str(championship.get("name") or "Championship")
             candidates.append((start, {
@@ -195,6 +203,10 @@ class CompanionApp:
         self.active_sync_stop_event = threading.Event()
         self.monitor_thread = None
         self.active_sync_thread = None
+        self.completed_competitions = set()
+        self.auto_watch_thread = None
+        self.auto_watch_stop_event = threading.Event()
+        self.manual_stop = False
         self.user = None
         self.id_token = None
         self.refresh_token = None
@@ -348,6 +360,8 @@ class CompanionApp:
                 self.upload_race(data, "Automatic race captured")
             elif kind == "active_competition":
                 self.apply_active_competition(data)
+            elif kind == "auto_start":
+                self.start_monitor(auto=True)
             elif kind == "stopped":
                 self.monitor_button.configure(text="Start monitoring", state="normal")
         self.root.after(200, self.process_events)
@@ -371,10 +385,12 @@ class CompanionApp:
             self.log(f"Signed in as {self.user['email']}.")
             self.password_var.set("")
             self.refresh_championships()
+            self.start_auto_watch()
         except (urllib.error.URLError, KeyError, json.JSONDecodeError) as error:
             messagebox.showerror("Sign in failed", self.error_message(error))
 
     def sign_out(self):
+        self.auto_watch_stop_event.set()
         self.stop_event.set()
         self.active_sync_stop_event.set()
         self.user = None
@@ -534,12 +550,41 @@ class CompanionApp:
 
     def toggle_monitor(self):
         if self.monitor_thread and self.monitor_thread.is_alive():
+            self.manual_stop = True
             self.stop_event.set()
             self.active_sync_stop_event.set()
             self.monitor_button.configure(text="Stopping...", state="disabled")
             return
+        self.manual_stop = False
+        self.start_monitor()
+
+    def start_auto_watch(self):
+        if self.auto_watch_thread and self.auto_watch_thread.is_alive():
+            return
+        self.auto_watch_stop_event.clear()
+        self.auto_watch_thread = threading.Thread(target=self.auto_watch_loop, daemon=True)
+        self.auto_watch_thread.start()
+
+    def auto_watch_loop(self):
+        while not self.auto_watch_stop_event.is_set():
+            try:
+                if self.user and not self.manual_stop and not (self.monitor_thread and self.monitor_thread.is_alive()):
+                    self.ensure_token()
+                    base = f"ams2Hub/{self.user['localId']}"
+                    events = request_json(self.database_url(f"{base}/events"))
+                    championships = request_json(self.database_url(f"{base}/championships"))
+                    if scheduled_active_competition(events, championships, completed=self.completed_competitions):
+                        self.events.put(("auto_start", None))
+            except (urllib.error.URLError, json.JSONDecodeError, RuntimeError, ValueError):
+                pass
+            self.auto_watch_stop_event.wait(SCHEDULE_REFRESH_SECONDS)
+
+    def start_monitor(self, auto=False):
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            return
         if not self.user:
-            messagebox.showerror("Sign in required", "Sign in before starting telemetry monitoring.")
+            if not auto:
+                messagebox.showerror("Sign in required", "Sign in before starting telemetry monitoring.")
             return
         self.refresh_championships()
         try:
@@ -547,9 +592,13 @@ class CompanionApp:
             if not isinstance(telemetry, dict) or "session" not in telemetry:
                 raise ValueError("The plugin returned an unexpected response.")
         except (urllib.error.URLError, json.JSONDecodeError, ValueError) as error:
-            messagebox.showerror("SimHub plugin unavailable", f"Start SimHub, install the AMS2 Career Hub Capture plugin, then test it again.\n\n{self.error_message(error)}")
+            if auto:
+                self.log(f"Auto-start waiting for SimHub plugin: {self.error_message(error)}")
+            else:
+                messagebox.showerror("SimHub plugin unavailable", f"Start SimHub, install the AMS2 Career Hub Capture plugin, then test it again.\n\n{self.error_message(error)}")
             return
-        self.stop_event.clear()
+        if auto:
+            self.log("Scheduled event is active; monitoring started automatically.")
         self.racing = False
         self.race_snapshot = None
         settings = {
@@ -592,7 +641,7 @@ class CompanionApp:
                         settings["database_url"], f"ams2Hub/{settings['user_id']}/championships", token
                     )))
                     next_schedule_refresh = now_monotonic + SCHEDULE_REFRESH_SECONDS
-                scheduled = scheduled_active_competition(events, championships)
+                scheduled = scheduled_active_competition(events, championships, completed=self.completed_competitions)
                 updated_competition = scheduled
                 if updated_competition != remote_competition:
                     request_json(active_url, updated_competition, "PUT")
@@ -650,6 +699,10 @@ class CompanionApp:
                             race["lapTimes"] = lap_times
                         race[f"{race_competition['type']}Id"] = race_competition["id"]
                         self.events.put(("capture", race))
+                        key = f"{race_competition['type']}:{race_competition['id']}"
+                        if race_competition.get("roundId"):
+                            key += f":{race_competition['roundId']}"
+                        self.completed_competitions.add(key)
                     elif not race_competition:
                         self.events.put(("log", "Race ignored because no active competition was set when it began."))
                     else:
@@ -677,6 +730,7 @@ class CompanionApp:
             return None
 
     def close(self):
+        self.auto_watch_stop_event.set()
         self.stop_event.set()
         self.active_sync_stop_event.set()
         self.root.destroy()
