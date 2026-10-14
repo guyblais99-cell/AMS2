@@ -148,6 +148,41 @@ def nested_value(data, path):
     return value
 
 
+def lap_ms(value):
+    try:
+        milliseconds = int(value)
+    except (TypeError, ValueError):
+        return None
+    return milliseconds if 1000 <= milliseconds <= 3600000 else None
+
+
+def merge_best_laps(laps, payload):
+    """Keep each driver's best lap seen during the race; return the player's own best from this frame."""
+    for driver in payload.get("drivers") or []:
+        if not isinstance(driver, dict):
+            continue
+        name = str(driver.get("name") or "").strip()[:60]
+        milliseconds = lap_ms(driver.get("bestLapMs"))
+        if not name or milliseconds is None:
+            continue
+        entry = laps.setdefault(name, {"name": name, "bestLapMs": milliseconds, "isPlayer": False})
+        entry["bestLapMs"] = min(entry["bestLapMs"], milliseconds)
+        entry["isPlayer"] = entry["isPlayer"] or bool(driver.get("isPlayer"))
+    return lap_ms(payload.get("bestLapMs"))
+
+
+def finished_lap_times(laps, player_best):
+    rows = [dict(entry) for entry in laps.values()]
+    own = next((row for row in rows if row["isPlayer"]), None)
+    if own:
+        own["bestLapMs"] = min(own["bestLapMs"], player_best) if player_best else own["bestLapMs"]
+        player_best = own["bestLapMs"]
+    elif player_best:
+        rows.append({"name": "You", "bestLapMs": player_best, "isPlayer": True})
+    rows.sort(key=lambda row: row["bestLapMs"])
+    return rows[:64], player_best
+
+
 class CompanionApp:
     def __init__(self, root):
         self.root = root
@@ -576,6 +611,8 @@ class CompanionApp:
         previous_error = 0
         race_competition = None
         race_started_at = None
+        race_laps = {}
+        player_best = None
         while not self.stop_event.is_set():
             try:
                 payload = request_json(settings["url"])
@@ -586,8 +623,13 @@ class CompanionApp:
                     if not self.racing:
                         race_competition = self.active_competition.copy() if self.active_competition else None
                         race_started_at = datetime.now(timezone.utc).isoformat()
+                        race_laps = {}
+                        player_best = None
                     self.racing = True
                     self.race_snapshot = fields
+                    own_best = merge_best_laps(race_laps, payload)
+                    if own_best:
+                        player_best = min(player_best, own_best) if player_best else own_best
                 elif self.racing:
                     snapshot = self.race_snapshot or fields
                     self.racing = False
@@ -601,6 +643,11 @@ class CompanionApp:
                             "position": position,
                             "startedAt": race_started_at,
                         }
+                        lap_times, own_best_lap = finished_lap_times(race_laps, player_best)
+                        if own_best_lap:
+                            race["bestLapMs"] = own_best_lap
+                        if lap_times:
+                            race["lapTimes"] = lap_times
                         race[f"{race_competition['type']}Id"] = race_competition["id"]
                         self.events.put(("capture", race))
                     elif not race_competition:
@@ -609,6 +656,8 @@ class CompanionApp:
                         self.events.put(("log", "Race session ended, but no valid finish position was mapped; skipped upload."))
                     race_competition = None
                     race_started_at = None
+                    race_laps = {}
+                    player_best = None
                 previous_error = 0
             except (urllib.error.URLError, json.JSONDecodeError, ValueError) as error:
                 now = time.monotonic()

@@ -47,7 +47,7 @@ python companion/tracker.py
 
 The plugin exposes SimHub's normalized game, session, track, car model/class, and position data on `127.0.0.1:17891`. The companion watches for race sessions and uploads their final position to the signed-in user's Firebase inbox, tagged with the scheduled championship round or single event. Scheduled championship rounds and single events enabled with **Auto-activation on** activate ten minutes before their start time. Calendar changes are picked up while monitoring. A race stays tagged to the competition active when the race began. The dashboard attaches exact track/vehicle matches to planned rounds. If telemetry differs, the result remains in the competition with a **Needs confirmation** action; confirming an unplanned result can add it as an extra round. Scheduled calendar items are the multiplayer marker; the app doesn't guess online status from opponent counts.
 
-The SimHub bridge does not capture incident counts.
+The SimHub bridge does not capture incident counts. Only the Race session is recorded; practice and qualifying are ignored. When a race ends, the companion also uploads your best lap and each driver's best lap that SimHub reported. The dashboard shows your best lap in Recent Race Results; click **Laps** to see everyone's, with yours highlighted. Best lap can also be typed in manually from **Edit**.
 
 ## Hosting and Offline Use
 

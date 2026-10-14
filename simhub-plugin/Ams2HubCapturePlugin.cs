@@ -65,7 +65,9 @@ namespace Ams2HubCapturePlugin
                     ["car"] = status?.CarModel ?? string.Empty,
                     ["carClass"] = status?.CarClass ?? string.Empty,
                     ["position"] = status?.Position ?? 0,
-                    ["opponentsCount"] = status?.OpponentsCount ?? 0
+                    ["opponentsCount"] = status?.OpponentsCount ?? 0,
+                    ["bestLapMs"] = LapMilliseconds(status?.BestLapTime),
+                    ["drivers"] = BuildDrivers(status)
                 };
 
                 latestJson = serializer.Serialize(snapshot);
@@ -74,6 +76,33 @@ namespace Ams2HubCapturePlugin
             {
                 SimHub.Logging.Current.Error("AMS2 Career Hub could not read the current SimHub frame.", error);
             }
+        }
+
+        private static object LapMilliseconds(TimeSpan? lap)
+        {
+            return lap.HasValue && lap.Value > TimeSpan.Zero ? (object)(int)Math.Round(lap.Value.TotalMilliseconds) : null;
+        }
+
+        private static List<Dictionary<string, object>> BuildDrivers(StatusDataBase status)
+        {
+            var drivers = new List<Dictionary<string, object>>();
+            if (status?.Opponents == null)
+                return drivers;
+            foreach (var opponent in status.Opponents)
+            {
+                if (opponent == null)
+                    continue;
+                drivers.Add(new Dictionary<string, object>
+                {
+                    ["name"] = opponent.Name ?? string.Empty,
+                    ["position"] = opponent.Position,
+                    ["bestLapMs"] = LapMilliseconds(opponent.BestLapTime),
+                    ["isPlayer"] = opponent.IsPlayer
+                });
+                if (drivers.Count >= 64)
+                    break;
+            }
+            return drivers;
         }
 
         public void End(PluginManager pluginManager)

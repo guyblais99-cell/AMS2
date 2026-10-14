@@ -127,6 +127,22 @@
       border-radius: 0 0 0.5rem 0;
     }
 
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid transparent;
+      border-radius: 0.5rem;
+    }
+
+    .lap-row-you {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: rgba(0, 240, 255, 0.5);
+      color: #00F0FF;
+      font-weight: 700;
+    }
+
     #events-grid-container {
       display: flex;
       flex-direction: column;
@@ -187,7 +203,7 @@
                   <label class="block"><span class="block text-gray-300 font-semibold mb-1">Status</span><select id="race-result-status" onchange="toggleRacePositionField()" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan"><option value="finished">Finished</option><option value="DNF">DNF</option></select></label>
                   <label id="race-result-position-field" class="block"><span class="block text-gray-300 font-semibold mb-1">Finish position</span><input id="race-result-position" type="number" min="1" max="99" step="1" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
                 </div>
-                <label class="block"><span class="block text-gray-300 font-semibold mb-1">Incidents <span class="font-normal text-gray-500">(optional)</span></span><input id="race-result-incidents" type="number" min="0" step="1" placeholder="Not recorded" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
+                <div class="grid grid-cols-2 gap-3"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Incidents <span class="font-normal text-gray-500">(optional)</span></span><input id="race-result-incidents" type="number" min="0" step="1" placeholder="Not recorded" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Best lap <span class="font-normal text-gray-500">(m:ss.mmm)</span></span><input id="race-result-best-lap" type="text" placeholder="1:30.123" autocomplete="off" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
                 <div class="pt-2 flex justify-end gap-3">
                   <button type="button" onclick="closeModal('race-result-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold hover:bg-carbon-700">Cancel</button>
                   <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase hover:bg-cyan-300">Save Result</button>
@@ -453,6 +469,7 @@
                 <th class="p-3">Track</th>
                 <th class="p-3">Vehicle</th>
                 <th class="p-3">Finish</th>
+                <th class="p-3">Best Lap</th>
                 <th class="p-3">Status</th>
                 <th class="p-3">Actions</th>
               </tr>
@@ -752,6 +769,20 @@
           <button type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase tracking-wider hover:bg-cyan-300">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Best lap times for a race -->
+  <div id="race-laps-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="carbon-card rounded-2xl max-w-md w-full p-6 space-y-4 border border-neon-cyan/30 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-white">Best Lap Times</h3>
+          <p id="race-laps-context" class="text-xs text-gray-400 mt-1"></p>
+        </div>
+        <button type="button" onclick="closeModal('race-laps-modal')" class="text-gray-400 hover:text-white" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="race-laps-list" class="space-y-1 text-sm"></div>
     </div>
   </div>
 
@@ -1062,6 +1093,47 @@
         window.setTimeout(() => window.onStateSaved?.(appState), 0);
       }
       return created;
+    }
+
+    function normalizeLapMs(value) {
+      const milliseconds = Number(value);
+      return Number.isInteger(milliseconds) && milliseconds >= 1000 && milliseconds <= 3600000 ? milliseconds : null;
+    }
+
+    function sanitizeLapTimes(value) {
+      if (!Array.isArray(value)) return [];
+      return value.slice(0, 64).map(row => ({
+        name: String(row?.name || 'Driver').slice(0, 60),
+        bestLapMs: normalizeLapMs(row?.bestLapMs),
+        isPlayer: Boolean(row?.isPlayer)
+      })).filter(row => row.bestLapMs !== null).sort((left, right) => left.bestLapMs - right.bestLapMs);
+    }
+
+    function formatLapTime(milliseconds) {
+      const value = normalizeLapMs(milliseconds);
+      if (value === null) return '—';
+      const seconds = ((value % 60000) / 1000).toFixed(3).padStart(6, '0');
+      return `${Math.floor(value / 60000)}:${seconds}`;
+    }
+
+    function parseLapTime(text) {
+      const raw = String(text || '').trim();
+      if (!raw) return null;
+      const match = raw.match(/^(?:(\d{1,2}):)?(\d{1,2}(?:\.\d{1,3})?)$/);
+      if (!match) return NaN;
+      const milliseconds = Math.round((Number(match[1] || 0) * 60 + Number(match[2])) * 1000);
+      return normalizeLapMs(milliseconds) ?? NaN;
+    }
+
+    function openRaceLapTimes(raceId) {
+      const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
+      const laps = sanitizeLapTimes(race?.lapTimes);
+      if (!race || !laps.length) return;
+      document.getElementById('race-laps-context').textContent = `${raceCompetitionLabel(race)} · ${race.track || 'Unknown track'}`;
+      document.getElementById('race-laps-list').innerHTML = laps.map((row, index) =>
+        `<div class="lap-row ${row.isPlayer ? 'lap-row-you' : 'text-gray-300'}"><span>${index + 1}. ${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</span><span class="font-mono">${formatLapTime(row.bestLapMs)}</span></div>`
+      ).join('');
+      openModal('race-laps-modal');
     }
 
     function raceFinishLabel(race) {
@@ -1437,6 +1509,7 @@
       document.getElementById('race-result-status').value = race.status === 'DNF' ? 'DNF' : 'finished';
       document.getElementById('race-result-position').value = Number(race.position) || '';
       document.getElementById('race-result-incidents').value = race.incidents ?? '';
+      document.getElementById('race-result-best-lap').value = normalizeLapMs(race.bestLapMs) ? formatLapTime(race.bestLapMs) : '';
       toggleRacePositionField();
       openModal('race-result-modal');
     }
@@ -1464,6 +1537,12 @@
         return;
       }
 
+      const bestLapMs = parseLapTime(document.getElementById('race-result-best-lap').value);
+      if (Number.isNaN(bestLapMs)) {
+        showToast('Enter best lap as m:ss.mmm, for example 1:30.123.', 'error');
+        return;
+      }
+
       const wasAutoDnf = race.source === 'auto-dnf';
       const previousPosition = Number(race.position) || 0;
       const previousIncidents = race.incidents === null || race.incidents === undefined || race.incidents === ''
@@ -1486,6 +1565,9 @@
       race.position = position;
       race.status = status === 'DNF' ? 'DNF' : 'finished';
       race.incidents = incidents;
+      race.bestLapMs = bestLapMs;
+      const ownLap = Array.isArray(race.lapTimes) ? race.lapTimes.find(row => row?.isPlayer) : null;
+      if (ownLap && bestLapMs) ownLap.bestLapMs = bestLapMs;
       race.matchStatus = 'manual';
       closeModal('race-result-modal');
       editingRaceResultId = null;
@@ -1770,6 +1852,8 @@
           incidents,
           xp: Number(race.xp) || 0,
           ratingDelta: race.ratingDelta || 'Telemetry',
+          bestLapMs: normalizeLapMs(race.bestLapMs),
+          lapTimes: sanitizeLapTimes(race.lapTimes),
           source: 'companion'
         };
         appState.racesHistory.unshift(entry);
@@ -1842,12 +1926,13 @@
             <td class="p-3 font-bold text-white">${escapeHTML(r.track)}</td>
             <td class="p-3 text-gray-300">${escapeHTML(r.carModel || r.carClass || 'Unknown vehicle')}</td>
             <td class="p-3 font-bold font-mono ${r.status === 'DNF' ? 'text-neon-crimson' : r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">${raceFinishLabel(r)}</td>
+            <td class="p-3 font-mono ${normalizeLapMs(r.bestLapMs) ? 'text-neon-cyan font-bold' : 'text-gray-500'}">${formatLapTime(r.bestLapMs)}</td>
             <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : 'Recorded'}</td>
-            <td class="p-3"><button type="button" onclick="openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></td>
+            <td class="p-3"><div class="flex gap-3">${sanitizeLapTimes(r.lapTimes).length ? `<button type="button" onclick="openRaceLapTimes('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Laps</button>` : ''}<button type="button" onclick="openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></div></td>
           </tr>
         `).join('');
         if (!appState.racesHistory.length) {
-          tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
         }
       }
 
