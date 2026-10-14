@@ -222,6 +222,7 @@ class CompanionApp:
         self.build_ui()
         self.root.after(200, self.process_events)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
+        self.root.after(500, self.restore_session)
 
     def load_config(self):
         defaults = {
@@ -292,7 +293,7 @@ class CompanionApp:
     def build_account_tab(self, parent):
         self.api_key_var = tk.StringVar(value=self.config.get("api_key", ""))
         self.database_url_var = tk.StringVar(value=self.config.get("database_url", ""))
-        self.email_var = tk.StringVar()
+        self.email_var = tk.StringVar(value=self.config.get("email", ""))
         self.password_var = tk.StringVar()
         self.label(parent, "Firebase Web API key")
         self.entry(parent, self.api_key_var).pack(fill="x")
@@ -306,7 +307,7 @@ class CompanionApp:
         actions.pack(fill="x", pady=14)
         self.button(actions, "Sign in", self.sign_in, primary=True).pack(side="left")
         self.button(actions, "Sign out", self.sign_out).pack(side="left", padx=8)
-        tk.Label(parent, text="Uses the same Firebase account as the web dashboard. The password is not saved; the session token stays in memory.",
+        tk.Label(parent, text="Uses the same Firebase account as the web dashboard. The password is never saved; a refresh token is stored locally so you stay signed in until you sign out.",
                  bg="#171d25", fg="#8493a1", wraplength=580, justify="left", font=("Segoe UI", 9)).pack(anchor="w", pady=(8, 0))
 
     def build_race_tab(self, parent):
@@ -384,12 +385,43 @@ class CompanionApp:
             self.status_var.set(f"Signed in: {self.user['email']}")
             self.log(f"Signed in as {self.user['email']}.")
             self.password_var.set("")
+            self.config.update({"email": self.user["email"], "uid": self.user["localId"],
+                                "refresh_token": self.refresh_token or ""})
+            self.save_config()
             self.refresh_championships()
             self.start_auto_watch()
         except (urllib.error.URLError, KeyError, json.JSONDecodeError) as error:
             messagebox.showerror("Sign in failed", self.error_message(error))
 
+    def restore_session(self):
+        saved_token = self.config.get("refresh_token")
+        uid = self.config.get("uid")
+        if not saved_token or not uid or not self.api_key_var.get().strip():
+            return
+        try:
+            self.user = {"localId": uid, "email": self.config.get("email", "")}
+            with self.token_lock:
+                self.refresh_token = saved_token
+                self.id_token = "x"
+                self.token_expires_at = 0
+            self.ensure_token()
+            self.config["refresh_token"] = self.refresh_token or saved_token
+            self.save_config()
+            self.status_var.set(f"Signed in: {self.user['email']}")
+            self.log(f"Restored saved session for {self.user['email']}.")
+            self.refresh_championships()
+            self.start_auto_watch()
+        except (urllib.error.URLError, KeyError, json.JSONDecodeError, RuntimeError) as error:
+            self.user = None
+            with self.token_lock:
+                self.id_token = None
+                self.refresh_token = None
+            self.log(f"Saved session expired; sign in again. ({self.error_message(error)})")
+
     def sign_out(self):
+        self.config.pop("refresh_token", None)
+        self.config.pop("uid", None)
+        self.save_config()
         self.auto_watch_stop_event.set()
         self.stop_event.set()
         self.active_sync_stop_event.set()
