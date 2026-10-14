@@ -421,10 +421,10 @@
         </div>
 
         <!-- Next Scheduled Event Widget with Countdown -->
-        <div class="carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-4 max-w-3xl w-full">
+        <div id="next-event-card" class="carbon-card rounded-2xl p-6 flex flex-col justify-between space-y-4 max-w-3xl w-full">
           <div class="space-y-2 border-b border-gray-800 pb-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 uppercase">Next Scheduled Race</span>
+              <span id="next-event-badge" class="text-xs font-bold px-2 py-0.5 rounded bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 uppercase">Next Scheduled Race</span>
               <i class="fa-solid fa-clock text-neon-cyan animate-pulse"></i>
             </div>
             <h3 id="next-event-title" class="text-lg font-bold text-white">No upcoming races</h3>
@@ -434,7 +434,7 @@
 
           <!-- Countdown Display -->
           <div class="bg-carbon-900/90 p-4 rounded-xl border border-neon-cyan/20 text-center space-y-1">
-            <span class="text-[10px] uppercase tracking-widest text-gray-400">Session Starts In</span>
+            <span id="countdown-label" class="text-[10px] uppercase tracking-widest text-gray-400">Session Starts In</span>
             <div id="countdown-timer" class="text-2xl font-mono font-extrabold text-neon-cyan tracking-wider">
               -- : -- : -- : --
             </div>
@@ -1031,10 +1031,22 @@
 
     // ----------------------------------------------------
     // ----------------------------------------------------
+    // An untagged captured race counts as the result for a calendar item if it was recorded within the item's window (10 min before start to 3 h after).
+    function findUntaggedCapturedResult(startTime) {
+      const start = new Date(startTime).getTime();
+      if (!Number.isFinite(start)) return undefined;
+      return appState.racesHistory.find(race => {
+        if (race.source === 'auto-dnf' || race.eventId || race.roundId || race.championshipId) return false;
+        const raceTime = new Date(race.startedAt || race.recordedAt || race.capturedAt || '').getTime();
+        return Number.isFinite(raceTime) && raceTime >= start - 10 * 60000 && raceTime <= start + 3 * 60 * 60 * 1000;
+      });
+    }
+
     function buildCalendarEntries() {
       return [
         ...appState.events.map(event => {
-          const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id));
+          const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id))
+            || findUntaggedCapturedResult(event.startTime);
           return {
             type: 'event', id: String(event.id), title: event.title, track: event.track, vehicle: event.carClass,
             startTime: event.startTime, scheduled: Boolean(event.scheduled), duration: event.duration,
@@ -1045,7 +1057,9 @@
           type: 'championship', id: String(championship.id), roundId: String(round.id),
           title: `${championship.name} · Round ${round.roundNumber}`, track: round.track, vehicle: round.vehicle,
           startTime: round.startTime, scheduled: true,
-          result: appState.racesHistory.find(race => String(race.roundId || '') === String(round.id)),
+          result: appState.racesHistory.find(race => String(race.roundId || '') === String(round.id))
+            || appState.racesHistory.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id))
+            || findUntaggedCapturedResult(round.startTime),
           championship
         })))
       ].map(entry => ({ ...entry, timestamp: new Date(entry.startTime).getTime() }))
@@ -1056,13 +1070,26 @@
         });
     }
 
+    // Closes 3 hours after start, or when the next scheduled item's activation window opens (10 min before its start), whichever is first.
+    function entryCloseTime(entry, allEntries) {
+      const nextStart = allEntries
+        .filter(other => other !== entry && other.scheduled && Number.isFinite(other.timestamp) && other.timestamp > entry.timestamp)
+        .reduce((min, other) => Math.min(min, other.timestamp - 10 * 60000), Infinity);
+      return Math.min(entry.timestamp + 3 * 60 * 60 * 1000, nextStart);
+    }
+
+    // Active from 10 minutes before start until a result is recorded or the entry closes.
+    function findActiveEntry(allEntries, now = Date.now()) {
+      return allEntries.find(entry => !entry.result && Number.isFinite(entry.timestamp) &&
+        now >= entry.timestamp - 10 * 60000 && now < entryCloseTime(entry, allEntries));
+    }
+
     function ensurePastCalendarDNFs() {
       const now = Date.now();
       let created = false;
-      for (const entry of buildCalendarEntries()) {
-        const durationMatch = String(entry.event?.duration || '45').match(/\d+/);
-        const durationMinutes = durationMatch ? Math.max(5, Number(durationMatch[0]) || 45) : 45;
-        const expiry = entry.timestamp + (entry.type === 'event' ? (durationMinutes + 30) * 60000 : 3 * 60 * 60 * 1000);
+      const allEntries = buildCalendarEntries();
+      for (const entry of allEntries) {
+        const expiry = entryCloseTime(entry, allEntries);
         if (entry.result || !Number.isFinite(expiry) || expiry >= now) continue;
         const round = entry.type === 'championship'
           ? championshipRoundPlans(entry.championship).find(item => String(item.id) === entry.roundId)
@@ -1148,8 +1175,22 @@
       const count = document.getElementById('next-event-count');
       if (!title || !details || !countdown || !count) return;
       const now = Date.now();
-      const upcoming = buildCalendarEntries().filter(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now);
-      const next = upcoming[0];
+      const allEntries = buildCalendarEntries();
+      const activeEntry = findActiveEntry(allEntries, now);
+      const upcoming = allEntries.filter(entry => !entry.result && Number.isFinite(entry.timestamp) && entry.timestamp >= now && entry !== activeEntry);
+      const next = activeEntry || upcoming[0];
+      const card = document.getElementById('next-event-card');
+      const badge = document.getElementById('next-event-badge');
+      const countdownLabel = document.getElementById('countdown-label');
+      if (card) {
+        card.style.border = activeEntry ? '2px solid #FF7A00' : '';
+        card.style.boxShadow = activeEntry ? '0 0 14px rgba(255,122,0,.35)' : '';
+      }
+      if (badge) {
+        badge.textContent = activeEntry ? 'Active' : 'Next Scheduled Race';
+        badge.style.cssText = activeEntry ? 'background:rgba(255,122,0,.15);color:#FF7A00;border-color:#FF7A00' : '';
+      }
+      if (countdownLabel) countdownLabel.textContent = activeEntry ? 'Closes In' : 'Session Starts In';
       count.textContent = `${upcoming.length} upcoming race${upcoming.length === 1 ? '' : 's'}`;
       if (!next) {
         title.textContent = 'No upcoming races';
@@ -1173,7 +1214,8 @@
           if (lobbyDisclosure) lobbyDisclosure.open = true;
         }
       }
-      let secondsRemaining = Math.max(0, Math.floor((next.timestamp - now) / 1000));
+      const targetTime = activeEntry ? entryCloseTime(activeEntry, allEntries) : next.timestamp;
+      let secondsRemaining = Math.max(0, Math.floor((targetTime - now) / 1000));
       const days = Math.floor(secondsRemaining / 86400);
       secondsRemaining %= 86400;
       const hours = Math.floor(secondsRemaining / 3600);
@@ -1214,9 +1256,8 @@
       });
 
       const nextEntry = openEntries.find(entry => Number.isFinite(entry.timestamp) && entry.timestamp >= now);
-      const active = appState.activeCompetition;
-      const activeEntry = openEntries.find(entry => active?.source === 'schedule' && active.type === entry.type && String(active.id) === entry.id &&
-        (entry.type !== 'championship' || String(active.roundId || '') === entry.roundId));
+      const activeEntry = findActiveEntry(entries, now);
+      const active = activeEntry ? { type: activeEntry.type, id: activeEntry.id, roundId: activeEntry.roundId, source: 'schedule' } : null;
       const highlight = document.getElementById('next-event-highlight');
       if (highlight) {
         const focus = activeEntry || nextEntry;
