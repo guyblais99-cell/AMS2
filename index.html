@@ -237,6 +237,9 @@
         <button onclick="switchTab('events')" id="nav-events" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
           <i class="fa-solid fa-calendar-days"></i> Race Calendar
         </button>
+        <button onclick="switchTab('results')" id="nav-results" class="tab-btn px-4 py-2 rounded-lg text-xs md:text-sm font-semibold flex items-center gap-2 text-gray-400 hover:text-white hover:bg-carbon-700/50 transition-all">
+          <i class="fa-solid fa-list-check"></i> Race Results
+        </button>
       </nav>
 
       <!-- Action Buttons -->
@@ -448,17 +451,17 @@
 
       </div>
 
-      <!-- Recent Logged Races Activity Table -->
-      <div class="carbon-card rounded-2xl p-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-bold text-white flex items-center gap-2">
-              <i class="fa-solid fa-list-check text-neon-cyan"></i> Recent Race Results
-            </h3>
-            <p class="text-xs text-gray-400">Latest captured and manually recorded results</p>
-          </div>
-        </div>
+    </section>
 
+    <!-- TAB: RECENT RACE RESULTS -->
+    <section id="tab-results" class="tab-content hidden space-y-6">
+      <div id="results-list-view" class="carbon-card rounded-2xl p-6 space-y-4">
+        <div>
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-neon-cyan"></i> Recent Race Results
+          </h3>
+          <p class="text-xs text-gray-400">Click a race to see full results</p>
+        </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono border-b border-gray-800">
@@ -475,12 +478,11 @@
               </tr>
             </thead>
             <tbody id="recent-races-tbody" class="divide-y divide-gray-800/60 font-medium">
-              <!-- Rendered dynamically -->
             </tbody>
           </table>
         </div>
       </div>
-
+      <div id="results-detail-view" class="carbon-card rounded-2xl p-6 space-y-4 hidden"></div>
     </section>
 
 
@@ -1132,7 +1134,8 @@
       return value.slice(0, 64).map(row => ({
         name: String(row?.name || 'Driver').slice(0, 60),
         bestLapMs: normalizeLapMs(row?.bestLapMs),
-        isPlayer: Boolean(row?.isPlayer)
+        isPlayer: Boolean(row?.isPlayer),
+        position: Number.isInteger(Number(row?.position)) && Number(row.position) > 0 && Number(row.position) < 100 ? Number(row.position) : null
       })).filter(row => row.bestLapMs !== null).sort((left, right) => left.bestLapMs - right.bestLapMs);
     }
 
@@ -1974,7 +1977,7 @@
       const tbody = document.getElementById('recent-races-tbody');
       if (tbody) {
         tbody.innerHTML = appState.racesHistory.slice(0, 10).map(r => `
-          <tr class="hover:bg-carbon-800/40 transition-all">
+          <tr class="hover:bg-carbon-800/40 transition-all cursor-pointer" onclick="openRaceDetail('${escapeHTML(r.id)}')">
             <td class="p-3 font-mono text-gray-400">${escapeHTML(r.date)}</td>
             <td class="p-3 text-gray-300">${escapeHTML(raceCompetitionLabel(r))}</td>
             <td class="p-3 text-gray-300">${escapeHTML(r.game || 'Unknown sim')}</td>
@@ -1982,8 +1985,8 @@
             <td class="p-3 text-gray-300">${escapeHTML(r.carModel || r.carClass || 'Unknown vehicle')}</td>
             <td class="p-3 font-bold font-mono ${r.status === 'DNF' ? 'text-neon-crimson' : r.position === 1 ? 'text-neon-amber' : r.position <= 3 ? 'text-blue-400' : 'text-gray-300'}">${raceFinishLabel(r)}</td>
             <td class="p-3 font-mono ${normalizeLapMs(r.bestLapMs) ? 'text-neon-cyan font-bold' : 'text-gray-500'}">${formatLapTime(r.bestLapMs)}</td>
-            <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : 'Recorded'}</td>
-            <td class="p-3"><div class="flex gap-3">${sanitizeLapTimes(r.lapTimes).length ? `<button type="button" onclick="openRaceLapTimes('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Laps</button>` : ''}<button type="button" onclick="openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></div></td>
+            <td class="p-3 text-xs ${r.needsReview ? 'text-neon-amber' : 'text-gray-400'}">${r.needsReview ? 'Needs confirmation' : r.matchStatus === 'matched' ? 'Matched' : r.matchStatus === 'confirmed' ? 'Confirmed' : 'Recorded'}</td>
+            <td class="p-3"><div class="flex gap-3">${r.needsReview ? `<button type="button" onclick="event.stopPropagation();confirmRaceFromList('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline font-bold">Confirm</button>` : ''}<button type="button" onclick="event.stopPropagation();openRaceDetail('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Results</button><button type="button" onclick="event.stopPropagation();openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></div></td>
           </tr>
         `).join('');
         if (!appState.racesHistory.length) {
@@ -1996,6 +1999,70 @@
       renderNextScheduledRace();
       renderSingleEvents();
       renderChampionships();
+      if (openRaceDetailId) renderRaceDetail();
+    }
+
+    let openRaceDetailId = null;
+
+    function confirmRaceFromList(raceId) {
+      const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
+      if (!race) return;
+      if (race.championshipId) confirmCapturedRace(raceId, 'championship', race.championshipId, race.suggestedRoundId || '');
+      else if (race.eventId) confirmCapturedRace(raceId, 'event', race.eventId);
+      else {
+        race.needsReview = false;
+        race.matchStatus = 'confirmed';
+        saveState();
+        showToast('Race result confirmed.');
+      }
+    }
+
+    function openRaceDetail(raceId) {
+      openRaceDetailId = String(raceId);
+      renderRaceDetail();
+    }
+
+    function closeRaceDetail() {
+      openRaceDetailId = null;
+      renderRaceDetail();
+    }
+
+    function renderRaceDetail() {
+      const list = document.getElementById('results-list-view');
+      const view = document.getElementById('results-detail-view');
+      const race = appState.racesHistory.find(item => String(item.id) === String(openRaceDetailId));
+      if (!race) openRaceDetailId = null;
+      list.classList.toggle('hidden', Boolean(race));
+      view.classList.toggle('hidden', !race);
+      if (!race) return;
+      const rows = sanitizeLapTimes(race.lapTimes);
+      rows.forEach(row => { if (row.isPlayer && Number(race.position) > 0) row.position = Number(race.position); });
+      const hasPositions = rows.some(row => row.position);
+      if (hasPositions) rows.sort((a, b) => (a.position || 999) - (b.position || 999));
+      const fastest = rows.length ? Math.min(...rows.map(row => row.bestLapMs)) : null;
+      const ownBest = normalizeLapMs(race.bestLapMs);
+      const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-left text-sm">
+        <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono text-xs border-b border-gray-800"><tr><th class="p-3">${hasPositions ? 'Pos' : '#'}</th><th class="p-3">Driver</th><th class="p-3">Best Lap</th><th class="p-3">Gap to Fastest</th></tr></thead>
+        <tbody class="divide-y divide-gray-800/60">${rows.map((row, index) => `<tr class="${row.isPlayer ? 'bg-neon-cyan/10 text-neon-cyan font-bold' : 'text-gray-300'}"><td class="p-3 font-mono">${hasPositions ? (row.position ? 'P' + row.position : '—') : index + 1}</td><td class="p-3">${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</td><td class="p-3 font-mono ${row.bestLapMs === fastest ? 'text-neon-green' : ''}">${formatLapTime(row.bestLapMs)}${row.bestLapMs === fastest ? ' ★' : ''}</td><td class="p-3 font-mono text-gray-400">${row.bestLapMs === fastest ? '—' : '+' + ((row.bestLapMs - fastest) / 1000).toFixed(3)}</td></tr>`).join('')}</tbody></table></div>
+        ${hasPositions ? '' : '<p class="text-xs text-gray-500">Finish order for other drivers was not captured for this race, so drivers are sorted by best lap. Races captured with the updated companion will include it.</p>'}
+        <p class="text-xs text-gray-500">SimHub does not provide total finish times, so best laps and finish positions are shown.</p>`
+        : '<p class="text-sm text-gray-500">No per-driver lap data was captured for this race.</p>';
+      const stat = (label, value, cls = 'text-white') => `<div class="rounded-xl bg-carbon-900/60 border border-gray-800 p-3 text-center"><div class="text-[10px] uppercase text-gray-400">${label}</div><div class="text-lg font-bold font-mono ${cls}">${value}</div></div>`;
+      view.innerHTML = `
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div><button type="button" onclick="closeRaceDetail()" class="text-xs text-neon-cyan underline mb-2"><i class="fa-solid fa-arrow-left"></i> All results</button>
+          <h3 class="text-xl font-bold text-white">${escapeHTML(race.track || 'Unknown track')}</h3>
+          <p class="text-xs text-gray-400">${escapeHTML(raceCompetitionLabel(race))} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')} · ${escapeHTML(race.date || '')}</p></div>
+          <div class="flex gap-2">${race.needsReview ? `<button type="button" onclick="confirmRaceFromList('${escapeHTML(race.id)}')" class="rounded-lg px-3 py-1.5 text-xs font-bold bg-neon-amber/15 text-neon-amber border border-neon-amber/30">Confirm result</button>` : ''}<button type="button" onclick="openRaceResultEditor('${escapeHTML(race.id)}')" class="rounded-lg px-3 py-1.5 text-xs font-bold bg-carbon-700 text-neon-cyan border border-gray-700">Edit</button></div>
+        </div>
+        ${race.needsReview ? `<p class="text-xs text-amber-200">${escapeHTML(race.reviewReason || 'This result needs confirmation.')}</p>` : ''}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          ${stat('Your Finish', raceFinishLabel(race), 'text-neon-amber')}
+          ${stat('Your Best Lap', formatLapTime(ownBest), 'text-neon-cyan')}
+          ${stat('Fastest Lap', formatLapTime(fastest), 'text-neon-green')}
+          ${stat('Drivers', rows.length || '—')}
+        </div>
+        ${table}`;
     }
 
     function renderRatingMilestones() {

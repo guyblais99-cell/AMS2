@@ -176,6 +176,12 @@ def merge_best_laps(laps, payload):
         entry = laps.setdefault(name, {"name": name, "bestLapMs": milliseconds, "isPlayer": False})
         entry["bestLapMs"] = min(entry["bestLapMs"], milliseconds)
         entry["isPlayer"] = entry["isPlayer"] or bool(driver.get("isPlayer"))
+        try:
+            position = int(driver.get("position"))
+        except (TypeError, ValueError):
+            position = 0
+        if 1 <= position <= 99:
+            entry["position"] = position
     return lap_ms(payload.get("bestLapMs"))
 
 
