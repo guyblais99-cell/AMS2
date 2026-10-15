@@ -648,6 +648,7 @@ class CompanionApp:
             "api_key": self.api_key_var.get().strip(),
         }
         self.active_sync_stop_event.clear()
+        self.stop_event.clear()
         self.monitor_button.configure(text="Stop monitoring", state="normal")
         self.events.put(("status", f"Monitoring: {self.user['email']}"))
         self.monitor_thread = threading.Thread(target=self.monitor_loop, args=(settings,), daemon=True)
@@ -718,6 +719,7 @@ class CompanionApp:
                     if own_best:
                         player_best = min(player_best, own_best) if player_best else own_best
                 elif self.racing:
+                    finished_race = False
                     snapshot = self.race_snapshot or fields
                     self.racing = False
                     position = self.to_int(snapshot.get("position"))
@@ -741,6 +743,7 @@ class CompanionApp:
                         if race_competition.get("roundId"):
                             key += f":{race_competition['roundId']}"
                         self.completed_competitions.add(key)
+                        finished_race = True
                     elif not race_competition:
                         self.events.put(("log", "Race ignored because no active competition was set when it began."))
                     else:
@@ -749,6 +752,10 @@ class CompanionApp:
                     race_started_at = None
                     race_laps = {}
                     player_best = None
+                    if finished_race:
+                        self.events.put(("log", "Race captured; monitoring stopped. It restarts automatically for the next scheduled race, or press Start monitoring."))
+                        self.active_sync_stop_event.set()
+                        break
                 previous_error = 0
             except (urllib.error.URLError, json.JSONDecodeError, ValueError) as error:
                 now = time.monotonic()
