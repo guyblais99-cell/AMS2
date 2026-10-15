@@ -1,4 +1,4 @@
-const CACHE_NAME = "ams2-hub-shell-v6";
+const CACHE_NAME = "ams2-hub-shell-v7";
 const APP_SHELL = ["/", "/index.html", "/app.css", "/firebase-config.js", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 const EXTERNAL_ASSET_HOSTS = new Set([
   "cdnjs.cloudflare.com",
