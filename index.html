@@ -280,7 +280,7 @@
                 <h2 id="driver-name-display" class="text-2xl font-extrabold text-white tracking-tight">Apex Driver</h2>
                 
               </div>
-              <p id="driver-title-display" class="text-xs text-neon-cyan font-mono font-semibold tracking-wide uppercase">GT3 Aspirant • Tier 2</p>
+              <p id="driver-title-display" class="text-xs text-neon-cyan font-mono font-semibold tracking-wide uppercase">GT3 Aspirant â€¢ Tier 2</p>
               <div class="flex items-center gap-3 text-xs text-gray-400 pt-1">
                 <span class="flex items-center gap-1"><i class="fa-solid fa-shield-halved text-neon-amber"></i> Grade: <strong id="skill-grade-display" class="text-white">Silver II</strong></span>
               </div>
@@ -659,7 +659,7 @@
         <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Game</span><input id="championship-game-input" required value="Automobilista 2" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label><label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby name (optional)</span><input id="championship-lobby-name-input" type="text" maxlength="100" placeholder="Server / lobby name" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label></div>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Lobby password (optional)</span><input id="championship-lobby-password-input" type="password" maxlength="100" placeholder="Stored with your account" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
         <label class="block"><span class="block text-gray-300 font-semibold mb-1">Championship vehicle / class (same for every race)</span><input id="championship-vehicle-input" type="search" list="championship-known-vehicles" required placeholder="Search or enter vehicle" class="w-full bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /></label>
-        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><div class="championship-round-count"><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="championship-round-count-controls"><button type="button" onclick="adjustChampionshipRoundCount(1)" aria-label="Increase number of races"><i class="fa-solid fa-chevron-up"></i></button><button type="button" onclick="adjustChampionshipRoundCount(-1)" aria-label="Decrease number of races"><i class="fa-solid fa-chevron-down"></i></button></span></div></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 · 18 · 15 · 12 · 10 · 8 · 6 · 4 · 2 · 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
+        <div class="grid grid-cols-2 gap-4"><label class="block"><span class="block text-gray-300 font-semibold mb-1">Number of races</span><div class="championship-round-count"><input id="championship-rounds-input" type="number" min="1" max="50" value="6" oninput="renderChampionshipRoundInputs()" required class="bg-carbon-900 text-white p-2.5 rounded-xl border border-gray-800 focus:outline-none focus:border-neon-cyan" /><span class="championship-round-count-controls"><button type="button" onclick="adjustChampionshipRoundCount(1)" aria-label="Increase number of races"><i class="fa-solid fa-chevron-up"></i></button><button type="button" onclick="adjustChampionshipRoundCount(-1)" aria-label="Decrease number of races"><i class="fa-solid fa-chevron-down"></i></button></span></div></label><div class="rounded-lg border border-gray-800 bg-carbon-900/60 p-3"><span class="block text-gray-300 font-semibold">Points per finish</span><span class="mt-1 block font-mono text-neon-amber">25 Â· 18 Â· 15 Â· 12 Â· 10 Â· 8 Â· 6 Â· 4 Â· 2 Â· 1</span><span class="mt-1 block text-gray-500">P1 through P10; other finishes score 0.</span></div></div>
         <div id="championship-rounds-fields" class="space-y-3 max-h-72 overflow-y-auto pr-1"></div>
         <p class="text-gray-500">Positions beyond the scoring list earn zero points.</p>
         <div class="pt-2 flex justify-end gap-3"><button type="button" onclick="closeModal('create-championship-modal')" class="px-4 py-2 rounded-xl bg-carbon-800 text-gray-300 font-bold">Cancel</button><button id="championship-save-button" type="submit" class="px-5 py-2 rounded-xl bg-neon-cyan text-black font-extrabold uppercase">Create Series</button></div>
@@ -1064,7 +1064,7 @@
         }),
         ...appState.championships.flatMap(championship => championshipRoundPlans(championship).map(round => ({
           type: 'championship', id: String(championship.id), roundId: String(round.id),
-          title: `${championship.name} · Round ${round.roundNumber}`, track: round.track, vehicle: round.vehicle,
+          title: `${championship.name} Â· Round ${round.roundNumber}`, track: round.track, vehicle: round.vehicle,
           startTime: round.startTime, scheduled: true,
           result: appState.racesHistory.find(race => String(race.roundId || '') === String(round.id))
             || appState.racesHistory.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id))
@@ -1148,7 +1148,7 @@
 
     function formatLapTime(milliseconds) {
       const value = normalizeLapMs(milliseconds);
-      if (value === null) return '—';
+      if (value === null) return 'â€”';
       const seconds = ((value % 60000) / 1000).toFixed(3).padStart(6, '0');
       return `${Math.floor(value / 60000)}:${seconds}`;
     }
@@ -1166,7 +1166,7 @@
       const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
       const laps = sanitizeLapTimes(race?.lapTimes);
       if (!race || !laps.length) return;
-      document.getElementById('race-laps-context').textContent = `${raceCompetitionLabel(race)} · ${race.track || 'Unknown track'}`;
+      document.getElementById('race-laps-context').textContent = `${raceCompetitionLabel(race)} Â· ${race.track || 'Unknown track'}`;
       document.getElementById('race-laps-list').innerHTML = laps.map((row, index) =>
         `<div class="lap-row ${row.isPlayer ? 'lap-row-you' : 'text-gray-300'}"><span>${index + 1}. ${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</span><span class="font-mono">${formatLapTime(row.bestLapMs)}</span></div>`
       ).join('');
@@ -1210,14 +1210,14 @@
         return;
       }
       title.textContent = next.title;
-      details.textContent = `${next.vehicle} · ${next.track} · ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`;
+      details.textContent = `${next.vehicle} Â· ${next.track} Â· ${new Date(next.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}`;
       const lobby = next.championship || next.event;
       const lobbyName = String(lobby?.lobbyName || '').trim();
       const lobbyPassword = String(lobby?.lobbyPassword || '');
       if (lobbyDetails) {
         const lobbyWasOpen = lobbyDetails.querySelector('details')?.open || false;
         lobbyDetails.innerHTML = lobbyName || lobbyPassword
-          ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` · ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 text-gray-300">${lobbyName ? `<div><span class="text-gray-400">Lobby:</span> <strong>${escapeHTML(lobbyName)}</strong></div>` : ''}${lobbyPassword ? `<div class="mt-1"><span class="text-gray-400">Password:</span>&nbsp;<code>${escapeHTML(lobbyPassword)}</code>&nbsp;&nbsp;<button type="button" onclick="copyNextRaceLobbyPassword()" class="text-neon-cyan underline">Copy</button></div>` : ''}</div></details>`
+          ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${lobbyName ? ` Â· ${escapeHTML(lobbyName)}` : ''}</summary><div class="mt-1 text-gray-300">${lobbyName ? `<div><span class="text-gray-400">Lobby:</span> <strong>${escapeHTML(lobbyName)}</strong></div>` : ''}${lobbyPassword ? `<div class="mt-1"><span class="text-gray-400">Password:</span>&nbsp;<code>${escapeHTML(lobbyPassword)}</code>&nbsp;&nbsp;<button type="button" onclick="copyNextRaceLobbyPassword()" class="text-neon-cyan underline">Copy</button></div>` : ''}</div></details>`
           : '';
         if (lobbyWasOpen) {
           const lobbyDisclosure = lobbyDetails.querySelector('details');
@@ -1272,7 +1272,7 @@
       if (highlight) {
         const focus = activeEntry || nextEntry;
         highlight.innerHTML = focus
-          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? '' : 'border-neon-cyan/30'}" ${activeEntry ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}><div><p class="text-[10px] font-mono uppercase ${activeEntry ? '' : 'text-neon-cyan'}" ${activeEntry ? 'style="color:#FF7A00"' : ''}>${activeEntry ? '<span class="inline-block w-2 h-2 rounded-full mr-1 animate-pulse" style="background:#FF7A00"></span>ACTIVE · ' + (activeEntry.type === 'championship' ? 'Championship' : 'Event') : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} · ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }))}</time></div>`
+          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? '' : 'border-neon-cyan/30'}" ${activeEntry ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}><div><p class="text-[10px] font-mono uppercase ${activeEntry ? '' : 'text-neon-cyan'}" ${activeEntry ? 'style="color:#FF7A00"' : ''}>${activeEntry ? '<span class="inline-block w-2 h-2 rounded-full mr-1 animate-pulse" style="background:#FF7A00"></span>ACTIVE Â· ' + (activeEntry.type === 'championship' ? 'Championship' : 'Event') : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} Â· ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }))}</time></div>`
           : '<div class="carbon-card rounded-xl px-4 py-3 text-sm text-gray-400">No upcoming events or championship rounds.</div>';
       }
 
@@ -1292,7 +1292,7 @@
           (entry.type !== 'championship' || (active.source === 'schedule' && String(active.roundId || '') === entry.roundId));
         const isNext = nextEntry === entry;
         const review = Boolean(entry.result?.needsReview);
-        const status = isActive ? 'Activated' : review ? 'Needs confirmation' : entry.result ? entry.result.status === 'DNF' ? 'DNF' : `Completed · P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
+        const status = isActive ? 'Activated' : review ? 'Needs confirmation' : entry.result ? entry.result.status === 'DNF' ? 'DNF' : `Completed Â· P${Number(entry.result.position) || '-'}` : entry.scheduled ? 'Auto-activates 10 min before' : 'Auto-activation off';
         const when = Number.isFinite(entry.timestamp)
           ? new Date(entry.timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
           : 'Time not set';
@@ -1308,7 +1308,7 @@
         const actions = `${confirmAction}${editAction}${scheduleAction}`;
         return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isActive ? '' : isNext ? 'border-neon-cyan/50' : ''}" ${isActive ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}>
           <time class="calendar-agenda-time text-xs font-mono text-gray-400">${escapeHTML(when)}</time>
-          <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] font-bold" style="color:#FF7A00">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} · ${escapeHTML(entry.vehicle)}</p></div>
+          <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] font-bold" style="color:#FF7A00">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} Â· ${escapeHTML(entry.vehicle)}</p></div>
           <div class="calendar-agenda-status"><span class="text-[11px] ${review ? 'text-neon-amber' : entry.result?.status === 'DNF' ? 'text-neon-crimson' : entry.result ? 'text-neon-green' : 'text-gray-400'}">${status}</span>${actions}</div>
         </article>`;
       }).join('');
@@ -1341,10 +1341,10 @@
         const when = Number.isFinite(timestamp)
           ? new Date(timestamp).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })
           : 'Time not set';
-        const status = result ? `Recorded · ${raceFinishLabel(result)}` : event.scheduled ? 'On calendar' : 'Auto-activation off';
+        const status = result ? `Recorded Â· ${raceFinishLabel(result)}` : event.scheduled ? 'On calendar' : 'Auto-activation off';
         return `<article class="carbon-card rounded-xl p-4 space-y-3 border border-gray-800">
-          <div class="flex justify-between gap-3"><div class="min-w-0"><span class="text-[10px] uppercase font-mono text-neon-cyan">Single event</span><h4 class="text-base font-bold text-white truncate">${escapeHTML(event.title)}</h4><p class="text-xs text-gray-400 truncate">${escapeHTML(event.track)} · ${escapeHTML(event.carClass)}</p></div><div class="flex items-start gap-2 shrink-0"><button type="button" onclick="editSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-white" title="Edit event" aria-label="Edit event"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete event" aria-label="Delete event"><i class="fa-solid fa-trash"></i></button></div></div>
-          <div class="flex flex-wrap justify-between gap-2 text-xs text-gray-400"><span>${escapeHTML(when)} · ${escapeHTML(event.duration || '45 min')}</span><span>${escapeHTML(status)}</span></div>
+          <div class="flex justify-between gap-3"><div class="min-w-0"><span class="text-[10px] uppercase font-mono text-neon-cyan">Single event</span><h4 class="text-base font-bold text-white truncate">${escapeHTML(event.title)}</h4><p class="text-xs text-gray-400 truncate">${escapeHTML(event.track)} Â· ${escapeHTML(event.carClass)}</p></div><div class="flex items-start gap-2 shrink-0"><button type="button" onclick="editSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-white" title="Edit event" aria-label="Edit event"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteSingleEvent('${escapeHTML(event.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete event" aria-label="Delete event"><i class="fa-solid fa-trash"></i></button></div></div>
+          <div class="flex flex-wrap justify-between gap-2 text-xs text-gray-400"><span>${escapeHTML(when)} Â· ${escapeHTML(event.duration || '45 min')}</span><span>${escapeHTML(status)}</span></div>
           ${event.lobbyName ? `<p class="text-xs text-gray-500 truncate">Lobby: ${escapeHTML(event.lobbyName)}</p>` : ''}
         </article>`;
       }).join('');
@@ -1570,7 +1570,7 @@
       const race = appState.racesHistory.find(item => String(item.id) === String(raceId));
       if (!race) return;
       editingRaceResultId = String(race.id);
-      document.getElementById('race-result-context').textContent = `${raceCompetitionLabel(race)} · ${race.track || 'Unknown track'}`;
+      document.getElementById('race-result-context').textContent = `${raceCompetitionLabel(race)} Â· ${race.track || 'Unknown track'}`;
       document.getElementById('race-result-status').value = race.status === 'DNF' ? 'DNF' : 'finished';
       document.getElementById('race-result-position').value = Number(race.position) || '';
       document.getElementById('race-result-incidents').value = race.incidents ?? '';
@@ -1727,9 +1727,9 @@
           const review = races.find(race => race.needsReview && String(race.suggestedRoundId || '') === String(round.id));
           const scheduledAt = round.startTime ? new Date(round.startTime).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Time not set';
           const outcome = result
-            ? `${raceFinishLabel(result)} · ${championshipPoints(championship, Number(result.position) || 0)} pts`
+            ? `${raceFinishLabel(result)} Â· ${championshipPoints(championship, Number(result.position) || 0)} pts`
             : review
-              ? `Review: ${escapeHTML(review.track || 'Unknown track')} · ${escapeHTML(review.carModel || review.carClass || 'Unknown vehicle')}`
+              ? `Review: ${escapeHTML(review.track || 'Unknown track')} Â· ${escapeHTML(review.carModel || review.carClass || 'Unknown vehicle')}`
               : 'Upcoming';
           const resultControl = review
             ? `<button onclick="confirmCapturedRace('${escapeHTML(review.id)}','championship','${escapeHTML(championship.id)}','${escapeHTML(round.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Confirm result</button>`
@@ -1739,13 +1739,13 @@
           return `<div class="grid grid-cols-[3rem_1fr] gap-2 border-t border-gray-800 py-2 text-xs"><span class="text-gray-500 font-mono">R${round.roundNumber}</span><div class="min-w-0"><div class="flex justify-between gap-2"><strong class="text-white truncate">${escapeHTML(round.track)}</strong><span class="text-gray-400">${escapeHTML(scheduledAt)}</span></div><div class="flex justify-between gap-2 text-gray-400"><span class="truncate">${escapeHTML(round.vehicle)}</span><span class="text-right">${outcome} ${resultControl}</span></div></div></div>`;
         }).join('');
         const unassignedReviews = races.filter(race => race.needsReview && !race.suggestedRoundId).map(race =>
-          `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
+          `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} Â· ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
         ).join('');
-        return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800 min-w-0">
-          <div class="flex justify-between gap-3"><div class="min-w-0 flex-1"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}</p>${championship.lobbyName || championship.lobbyPassword ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${championship.lobbyName ? ` · ${escapeHTML(championship.lobbyName)}` : ''}</summary><div class="mt-1 flex items-center gap-2 text-gray-300"><span>Password:</span><code>${escapeHTML(championship.lobbyPassword || 'Not set')}</code>${championship.lobbyPassword ? `<button type="button" onclick="copyChampionshipLobbyPassword('${String(championship.id)}')" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>` : ''}</div><div class="flex items-start gap-2 shrink-0" style="gap:.5rem"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="cloneChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-cyan" title="Create new championship from this one" aria-label="Create from this championship"><i class="fa-solid fa-copy"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
+        return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800" style="min-width:0">
+          <div class="flex justify-between gap-3"><div style="min-width:0;flex:1 1 0;overflow-wrap:anywhere"><h3 class="text-lg font-bold text-white">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}</p>${championship.lobbyName || championship.lobbyPassword ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${championship.lobbyName ? ` Â· ${escapeHTML(championship.lobbyName)}` : ''}</summary><div class="mt-1 flex items-center gap-2 text-gray-300"><span>Password:</span><code>${escapeHTML(championship.lobbyPassword || 'Not set')}</code>${championship.lobbyPassword ? `<button type="button" onclick="copyChampionshipLobbyPassword('${String(championship.id)}')" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>` : ''}</div><div class="flex items-start gap-2 shrink-0" style="gap:.5rem"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="cloneChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-cyan" title="Create new championship from this one" aria-label="Create from this championship"><i class="fa-solid fa-copy"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
-          <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
+          <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} Â· ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} Â· ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
         </article>`;
       }).join('');
     }
@@ -1978,7 +1978,7 @@
     function raceCompetitionLabel(race) {
       if (race.championshipId) {
         const championship = appState.championships.find(item => String(item.id) === String(race.championshipId));
-        if (championship) return `${championship.name}${race.roundNumber ? ` · R${race.roundNumber}` : ''}`;
+        if (championship) return `${championship.name}${race.roundNumber ? ` Â· R${race.roundNumber}` : ''}`;
       }
       if (race.eventId) return appState.events.find(item => String(item.id) === String(race.eventId))?.title || 'Event';
       return 'Open race';
@@ -2090,7 +2090,7 @@
       const ownBest = normalizeLapMs(race.bestLapMs);
       const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-left text-sm">
         <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono text-xs border-b border-gray-800"><tr><th class="p-3">${hasPositions ? 'Pos' : '#'}</th><th class="p-3">Driver</th><th class="p-3">Best Lap</th><th class="p-3">Gap to Fastest</th></tr></thead>
-        <tbody class="divide-y divide-gray-800/60">${rows.map((row, index) => `<tr class="${row.isPlayer ? 'bg-neon-cyan/10 text-neon-cyan font-bold' : 'text-gray-300'}"><td class="p-3 font-mono">${hasPositions ? (row.position ? 'P' + row.position : '—') : index + 1}</td><td class="p-3">${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</td><td class="p-3 font-mono ${row.bestLapMs === fastest ? 'text-neon-green' : ''}">${formatLapTime(row.bestLapMs)}${row.bestLapMs === fastest ? ' ★' : ''}</td><td class="p-3 font-mono text-gray-400">${row.bestLapMs === fastest ? '—' : '+' + ((row.bestLapMs - fastest) / 1000).toFixed(3)}</td></tr>`).join('')}</tbody></table></div>
+        <tbody class="divide-y divide-gray-800/60">${rows.map((row, index) => `<tr class="${row.isPlayer ? 'bg-neon-cyan/10 text-neon-cyan font-bold' : 'text-gray-300'}"><td class="p-3 font-mono">${hasPositions ? (row.position ? 'P' + row.position : 'â€”') : index + 1}</td><td class="p-3">${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</td><td class="p-3 font-mono ${row.bestLapMs === fastest ? 'text-neon-green' : ''}">${formatLapTime(row.bestLapMs)}${row.bestLapMs === fastest ? ' â˜…' : ''}</td><td class="p-3 font-mono text-gray-400">${row.bestLapMs === fastest ? 'â€”' : '+' + ((row.bestLapMs - fastest) / 1000).toFixed(3)}</td></tr>`).join('')}</tbody></table></div>
         ${hasPositions ? '' : '<p class="text-xs text-gray-500">Finish order for other drivers was not captured for this race, so drivers are sorted by best lap. Races captured with the updated companion will include it.</p>'}
         <p class="text-xs text-gray-500">SimHub does not provide total finish times, so best laps and finish positions are shown.</p>`
         : '<p class="text-sm text-gray-500">No per-driver lap data was captured for this race.</p>';
@@ -2099,7 +2099,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div><button type="button" onclick="closeRaceDetail()" class="text-xs text-neon-cyan underline mb-2"><i class="fa-solid fa-arrow-left"></i> All results</button>
           <h3 class="text-xl font-bold text-white">${escapeHTML(race.track || 'Unknown track')}</h3>
-          <p class="text-xs text-gray-400">${escapeHTML(raceCompetitionLabel(race))} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')} · ${escapeHTML(race.date || '')}</p></div>
+          <p class="text-xs text-gray-400">${escapeHTML(raceCompetitionLabel(race))} Â· ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')} Â· ${escapeHTML(race.date || '')}</p></div>
           <div class="flex gap-2">${race.needsReview ? `<button type="button" onclick="confirmRaceFromList('${escapeHTML(race.id)}')" class="rounded-lg px-3 py-1.5 text-xs font-bold bg-neon-amber/15 text-neon-amber border border-neon-amber/30">Confirm result</button>` : ''}<button type="button" onclick="openRaceResultEditor('${escapeHTML(race.id)}')" class="rounded-lg px-3 py-1.5 text-xs font-bold bg-carbon-700 text-neon-cyan border border-gray-700">Edit</button></div>
         </div>
         ${race.needsReview ? `<p class="text-xs text-amber-200">${escapeHTML(race.reviewReason || 'This result needs confirmation.')}</p>` : ''}
@@ -2107,7 +2107,7 @@
           ${stat('Your Finish', raceFinishLabel(race), 'text-neon-amber')}
           ${stat('Your Best Lap', formatLapTime(ownBest), 'text-neon-cyan')}
           ${stat('Fastest Lap', formatLapTime(fastest), 'text-neon-green')}
-          ${stat('Drivers', rows.length || '—')}
+          ${stat('Drivers', rows.length || 'â€”')}
         </div>
         ${table}`;
     }
