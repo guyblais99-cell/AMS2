@@ -466,6 +466,7 @@
           </h3>
           <p class="text-xs text-gray-400">Click a race to see full results</p>
         </div>
+        <select id="results-championship-filter" onchange="renderApp()" class="bg-carbon-800 text-xs text-gray-300 px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan"></select>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono border-b border-gray-800">
@@ -591,6 +592,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800 pb-1">
         <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-ranking-star text-neon-amber"></i> Events</h2>
         <div class="flex items-center gap-2 self-end sm:self-auto">
+          <label class="flex items-center gap-1.5 text-[10px] uppercase font-bold text-gray-300 cursor-pointer"><input type="checkbox" onchange="showCompletedEvents=this.checked;renderApp()" /> Show completed</label>
           <button onclick="startNewEvent()" class="px-2 py-1 rounded bg-carbon-700 text-gray-200 border border-gray-700 font-bold text-[10px] uppercase hover:bg-carbon-600 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-calendar-plus"></i> New Event</button>
           <button onclick="startNewChampionship()" class="px-2 py-1 rounded bg-neon-cyan text-black font-bold text-[10px] uppercase hover:bg-cyan-300 flex items-center gap-1.5 shrink-0"><i class="fa-solid fa-plus"></i> New Championship</button>
         </div>
@@ -863,6 +865,7 @@
     let appState = readLocalState();
     let editingEventId = null;
     let editingChampionshipId = null;
+    let showCompletedEvents = false;
     let editingRaceResultId = null;
     let championshipRoundDraft = [];
     function saveState() {
@@ -1331,7 +1334,7 @@
         container.innerHTML = '<p class="text-sm text-gray-500 md:col-span-2 xl:col-span-3">No single events yet. Create one with New Event.</p>';
         return;
       }
-      const events = [...appState.events].sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime());
+      const events = appState.events.filter(event => showCompletedEvents || !appState.racesHistory.some(race => String(race.eventId || '') === String(event.id) && !race.needsReview)).sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime());
       container.innerHTML = events.map(event => {
         const result = appState.racesHistory.find(race => String(race.eventId || '') === String(event.id));
         const timestamp = new Date(event.startTime).getTime();
@@ -1695,6 +1698,10 @@
       if (!container) return;
       const searchTerm = (document.getElementById('championship-search-input')?.value || '').trim().toLowerCase();
       const filteredChampionships = appState.championships.filter(championship => {
+        const plans = championshipRoundPlans(championship);
+        const done = plans.length > 0 && plans.every(round => appState.racesHistory.some(race => String(race.championshipId || '') === String(championship.id) && String(race.roundId || '') === String(round.id) && !race.needsReview));
+        const hasReview = appState.racesHistory.some(race => String(race.championshipId || '') === String(championship.id) && race.needsReview);
+        if (done && !hasReview && !showCompletedEvents) return false;
         const roundText = championshipRoundPlans(championship).map(round => `${round.track} ${round.vehicle}`).join(' ');
         return `${championship.name} ${championship.game} ${roundText}`.toLowerCase().includes(searchTerm);
       });
@@ -1735,7 +1742,7 @@
           `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-neon-amber/20 py-2 text-xs"><span class="text-amber-200">${escapeHTML(race.reviewReason || 'No planned round matches this result.')} Detected: ${escapeHTML(race.track || 'Unknown track')} · ${escapeHTML(race.carModel || race.carClass || 'Unknown vehicle')}.</span><button onclick="confirmCapturedRace('${String(race.id)}','championship','${String(championship.id)}')" class="shrink-0 rounded bg-neon-amber/15 px-2 py-1 text-neon-amber border border-neon-amber/30">Add as extra round</button></div>`
         ).join('');
         return `<article class="carbon-card rounded-xl p-5 space-y-4 border border-gray-800">
-          <div class="flex justify-between gap-3"><div class="min-w-0"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}</p>${championship.lobbyName || championship.lobbyPassword ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${championship.lobbyName ? ` · ${escapeHTML(championship.lobbyName)}` : ''}</summary><div class="mt-1 flex items-center gap-2 text-gray-300"><span>Password:</span><code>${escapeHTML(championship.lobbyPassword || 'Not set')}</code>${championship.lobbyPassword ? `<button type="button" onclick="copyChampionshipLobbyPassword('${String(championship.id)}')" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>` : ''}</div><div class="flex items-start gap-2 shrink-0"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
+          <div class="flex justify-between gap-3"><div class="min-w-0"><h3 class="text-lg font-bold text-white truncate">${escapeHTML(championship.name)}</h3><p class="text-xs text-gray-400">${escapeHTML(championship.game)}</p>${championship.lobbyName || championship.lobbyPassword ? `<details class="mt-2 text-xs"><summary class="cursor-pointer text-neon-cyan">Lobby details${championship.lobbyName ? ` · ${escapeHTML(championship.lobbyName)}` : ''}</summary><div class="mt-1 flex items-center gap-2 text-gray-300"><span>Password:</span><code>${escapeHTML(championship.lobbyPassword || 'Not set')}</code>${championship.lobbyPassword ? `<button type="button" onclick="copyChampionshipLobbyPassword('${String(championship.id)}')" class="text-neon-cyan underline">Copy</button>` : ''}</div></details>` : ''}</div><div class="flex items-start gap-2 shrink-0"><span class="text-xs font-mono text-neon-cyan">${races.filter(race => race.roundId).length}/${championshipRoundCount(championship)}</span><button type="button" onclick="editChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-white" title="Edit championship" aria-label="Edit championship"><i class="fa-solid fa-pen"></i></button><button type="button" onclick="cloneChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-cyan" title="Create new championship from this one" aria-label="Create from this championship"><i class="fa-solid fa-copy"></i></button><button type="button" onclick="deleteChampionship('${String(championship.id)}')" class="text-gray-400 hover:text-neon-crimson" title="Delete championship" aria-label="Delete championship"><i class="fa-solid fa-trash"></i></button></div></div>
           <div class="grid grid-cols-3 gap-2 border-y border-gray-800 py-3 text-center"><div><strong class="block text-white text-lg">${points}</strong><span class="text-[10px] text-gray-400">POINTS</span></div><div><strong class="block text-neon-amber text-lg">${wins}</strong><span class="text-[10px] text-gray-400">WINS</span></div><div><strong class="block text-blue-400 text-lg">${podiums}</strong><span class="text-[10px] text-gray-400">PODIUMS</span></div></div>
           <div class="flex justify-between text-xs text-gray-400"><span>Avg incidents/race</span><strong class="text-white">${average}</strong><span>${races.length} logged</span></div>
           <details class="text-xs"><summary class="cursor-pointer text-gray-300">Round schedule and results</summary><div class="mt-2">${roundRows || (races.length ? races.map((race, index) => `<div class="flex justify-between gap-2 border-t border-gray-800 py-2"><span class="text-gray-300 truncate">R${index + 1} · ${escapeHTML(race.track || 'Unknown track')}</span><span class="font-mono text-white">P${Number(race.position) || '-'} · ${championshipPoints(championship, Number(race.position) || 0)} pts</span></div>`).join('') : '<p class="text-gray-500 pt-2">No rounds configured yet.</p>')}${unassignedReviews}</div></details>
@@ -1782,6 +1789,21 @@
       setChampionshipModalMode(true);
       renderChampionshipRoundInputs();
       openModal('create-championship-modal');
+    }
+
+    function cloneChampionship(championshipId) {
+      const championship = appState.championships.find(item => String(item.id) === String(championshipId));
+      if (!championship) return;
+      editChampionship(championshipId);
+      editingChampionshipId = null;
+      championshipRoundDraft = championshipRoundDraft.map(round => ({ ...round, startTime: '' }));
+      const nameInput = document.getElementById('championship-name-input');
+      nameInput.value = '';
+      nameInput.placeholder = `New name (copy of ${championship.name})`;
+      setChampionshipModalMode(false);
+      document.getElementById('championship-rounds-fields').innerHTML = '';
+      renderChampionshipRoundInputs();
+      nameInput.focus();
     }
 
     function deleteChampionship(championshipId) {
@@ -1983,7 +2005,25 @@
       // Recent Activity Table
       const tbody = document.getElementById('recent-races-tbody');
       if (tbody) {
-        tbody.innerHTML = appState.racesHistory.slice(0, 10).map(r => `
+        const filterEl = document.getElementById('results-championship-filter');
+        if (filterEl) {
+          const previous = filterEl.value || 'recent';
+          filterEl.innerHTML = '<option value="recent">Recent races (latest 10)</option><option value="all">All races</option><option value="events">Single events</option>' +
+            appState.championships.map(c => `<option value="c:${escapeHTML(c.id)}">${escapeHTML(c.name)}</option>`).join('');
+          filterEl.value = [...filterEl.options].some(o => o.value === previous) ? previous : 'recent';
+        }
+        const selected = filterEl?.value || 'recent';
+        let shownRaces = appState.racesHistory;
+        if (selected === 'recent') shownRaces = shownRaces.slice(0, 10);
+        else if (selected === 'events') shownRaces = shownRaces.filter(r => r.eventId);
+        else if (selected.startsWith('c:')) {
+          const champId = selected.slice(2);
+          const champ = appState.championships.find(c => String(c.id) === champId);
+          const order = new Map(championshipRoundPlans(champ).map(p => [String(p.id), p.roundNumber]));
+          shownRaces = shownRaces.filter(r => String(r.championshipId || '') === champId)
+            .sort((a, b) => (order.get(String(a.roundId)) ?? 999) - (order.get(String(b.roundId)) ?? 999) || String(a.date).localeCompare(String(b.date)));
+        }
+        tbody.innerHTML = shownRaces.map(r => `
           <tr class="hover:bg-carbon-800/40 transition-all cursor-pointer" onclick="openRaceDetail('${escapeHTML(r.id)}')">
             <td class="p-3 font-mono text-gray-400">${escapeHTML(r.date)}</td>
             <td class="p-3 text-gray-300">${escapeHTML(raceCompetitionLabel(r))}</td>
@@ -1996,7 +2036,7 @@
             <td class="p-3"><div class="flex gap-3">${r.needsReview ? `<button type="button" onclick="event.stopPropagation();confirmRaceFromList('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline font-bold">Confirm</button>` : ''}<button type="button" onclick="event.stopPropagation();openRaceDetail('${escapeHTML(r.id)}')" class="text-neon-amber hover:text-yellow-300 underline">Results</button><button type="button" onclick="event.stopPropagation();openRaceResultEditor('${escapeHTML(r.id)}')" class="text-neon-cyan hover:text-cyan-200 underline">Edit</button></div></td>
           </tr>
         `).join('');
-        if (!appState.racesHistory.length) {
+        if (!shownRaces.length) {
           tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">Captured race results will appear here.</td></tr>';
         }
       }
