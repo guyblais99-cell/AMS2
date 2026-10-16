@@ -590,14 +590,8 @@
         <h2 class="text-sm font-bold text-white flex items-center gap-1.5 whitespace-nowrap"><i class="fa-solid fa-calendar-check text-neon-cyan"></i> Race Calendar</h2>
       </div>
 
-      <div id="next-event-highlight"></div>
-
       <!-- Filter Bar -->
       <div class="carbon-card p-4 rounded-xl flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-3 flex-1 min-w-[240px]">
-          <i class="fa-solid fa-magnifying-glass text-gray-500"></i>
-          <input type="text" id="event-search-input" onkeyup="filterEvents()" placeholder="Search track, car class, or title..." class="bg-transparent text-sm text-white focus:outline-none w-full" />
-        </div>
         <div class="flex items-center gap-3">
           <select id="event-class-filter" onchange="filterEvents()" class="bg-carbon-800 text-xs text-gray-300 px-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-neon-cyan">
             <option value="ALL">All Car Classes</option>
@@ -1222,7 +1216,6 @@
       const container = document.getElementById('events-grid-container');
       if (!container) return;
 
-      const searchTerm = (document.getElementById('event-search-input')?.value || '').trim().toLowerCase();
       const filterClass = document.getElementById('event-class-filter')?.value || 'ALL';
       const now = Date.now();
       const entries = buildCalendarEntries();
@@ -1238,18 +1231,8 @@
       const nextEntry = openEntries.find(entry => Number.isFinite(entry.timestamp) && entry.timestamp >= now);
       const activeEntry = findActiveEntry(entries, now);
       const active = activeEntry ? { type: activeEntry.type, id: activeEntry.id, roundId: activeEntry.roundId, source: 'schedule' } : null;
-      const highlight = document.getElementById('next-event-highlight');
-      if (highlight) {
-        const focus = activeEntry || nextEntry;
-        highlight.innerHTML = focus
-          ? `<div class="carbon-card rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border ${activeEntry ? '' : 'border-neon-cyan/30'}" ${activeEntry ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}><div><p class="text-[10px] font-mono uppercase ${activeEntry ? '' : 'text-neon-cyan'}" ${activeEntry ? 'style="color:#FF7A00"' : ''}>${activeEntry ? '<span class="inline-block w-2 h-2 rounded-full mr-1 animate-pulse" style="background:#FF7A00"></span>ACTIVE · ' + (activeEntry.type === 'championship' ? 'Championship' : 'Event') : 'Next up'}</p><h3 class="text-sm font-bold text-white">${escapeHTML(focus.title)}</h3><p class="text-xs text-gray-400">${escapeHTML(focus.track)} · ${escapeHTML(focus.vehicle)}</p></div><time class="text-xs font-mono text-gray-300">${escapeHTML(new Date(focus.startTime).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }))}</time></div>`
-          : '<div class="carbon-card rounded-xl px-4 py-3 text-sm text-gray-400">No upcoming events or championship rounds.</div>';
-      }
-
       const filtered = openEntries.filter(entry => {
-        const matchesSearch = `${entry.title} ${entry.track} ${entry.vehicle}`.toLowerCase().includes(searchTerm);
-        const matchesClass = filterClass === 'ALL' || String(entry.vehicle || '').includes(filterClass);
-        return matchesSearch && matchesClass;
+        return filterClass === 'ALL' || String(entry.vehicle || '').includes(filterClass);
       });
       if (!filtered.length) {
         container.innerHTML = openEntries.length
@@ -1276,8 +1259,8 @@
           ? `<button type="button" onclick="confirmCapturedRace('${escapeHTML(entry.result.id)}','event','${escapeHTML(entry.id)}')" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold bg-neon-amber/15 text-neon-amber border border-neon-amber/30">Confirm &amp; update details</button>`
           : '';
         const actions = `${confirmAction}${editAction}${scheduleAction}`;
-        return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isActive ? '' : isNext ? 'border-neon-cyan/50' : ''}" ${isActive ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}>
-          <time class="calendar-agenda-time text-xs font-mono text-gray-400">${escapeHTML(when)}</time>
+        return `<article class="carbon-card rounded-xl px-4 py-3 calendar-agenda-row ${isActive ? '' : isNext ? 'border-neon-cyan' : ''}" ${!isActive && isNext ? 'style="border-width:2px;box-shadow:0 0 14px rgba(0,229,255,.3)"' : ''} ${isActive ? 'style="border:2px solid #FF7A00;box-shadow:0 0 14px rgba(255,122,0,.35)"' : ''}>
+          <time class="calendar-agenda-time font-mono font-semibold text-gray-200" style="font-size:.95rem">${escapeHTML(when)}</time>
           <div class="min-w-0"><div class="flex items-center gap-2"><span class="text-[10px] uppercase font-mono ${entry.type === 'championship' ? 'text-neon-amber' : 'text-neon-cyan'}">${entry.type === 'championship' ? 'Championship' : 'Single event'}</span>${isNext ? '<span class="text-[10px] text-neon-cyan font-bold">NEXT</span>' : ''}${isActive ? '<span class="text-[10px] font-bold" style="color:#FF7A00">ACTIVE</span>' : ''}</div><h3 class="text-sm font-bold text-white truncate">${escapeHTML(entry.title)}</h3><p class="text-xs text-gray-400 truncate">${escapeHTML(entry.track)} · ${escapeHTML(entry.vehicle)}</p></div>
           <div class="calendar-agenda-status"><span class="text-[11px] ${review ? 'text-neon-amber' : entry.result?.status === 'DNF' ? 'text-neon-crimson' : entry.result ? 'text-neon-green' : 'text-gray-400'}">${status}</span>${actions}</div>
         </article>`;
