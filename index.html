@@ -1048,6 +1048,8 @@
     function entryCloseTime(entry, allEntries) {
       const nextStart = allEntries
         .filter(other => other !== entry && other.scheduled && Number.isFinite(other.timestamp) && other.timestamp > entry.timestamp)
+        // Rounds of the same championship less than 1 hour apart are a back-to-back block and stay open together.
+        .filter(other => !(entry.type === 'championship' && other.type === 'championship' && other.id === entry.id && other.timestamp - entry.timestamp < 60 * 60000))
         .reduce((min, other) => Math.min(min, other.timestamp - 10 * 60000), Infinity);
       return Math.min(entry.timestamp + 3 * 60 * 60 * 1000, nextStart);
     }
@@ -1437,15 +1439,13 @@
           !appState.racesHistory.some(existing => existing.source !== 'auto-dnf' && String(existing.roundId || '') === String(round.id))
         );
         const matchingRounds = availableRounds.filter(round => raceMatchesPlan(race, round.track, round.vehicle));
-        let matchingRound = matchingRounds[0];
-        if (matchingRounds.length > 1 && race.startedAt) {
-          const raceStart = new Date(race.startedAt).getTime();
-          if (Number.isFinite(raceStart)) {
-            matchingRound = matchingRounds.sort((left, right) =>
-              Math.abs(new Date(left.startTime).getTime() - raceStart) - Math.abs(new Date(right.startTime).getTime() - raceStart)
-            )[0];
-          }
-        }
+        // Back-to-back rounds sync chronologically: prefer the earliest uncompleted round near the race's start time.
+        const raceStart = new Date(race.startedAt || race.recordedAt || '').getTime();
+        const byStart = [...matchingRounds].sort((left, right) => new Date(left.startTime).getTime() - new Date(right.startTime).getTime());
+        const nearby = Number.isFinite(raceStart)
+          ? byStart.filter(round => Math.abs(new Date(round.startTime).getTime() - raceStart) <= 3 * 60 * 60 * 1000)
+          : [];
+        const matchingRound = (nearby.length ? nearby : byStart)[0];
         if (matchingRound) {
           race.roundId = matchingRound.id;
           race.roundNumber = matchingRound.roundNumber;
@@ -2034,6 +2034,8 @@
       if (hasPositions) rows.sort((a, b) => (a.position || 999) - (b.position || 999));
       const fastest = rows.length ? Math.min(...rows.map(row => row.bestLapMs)) : null;
       const ownBest = normalizeLapMs(race.bestLapMs);
+      const fastestLap = [fastest, ownBest].filter(Number.isFinite).reduce((min, value) => Math.min(min, value), Infinity);
+      const fastestOverall = Number.isFinite(fastestLap) ? fastestLap : null;
       const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-left text-sm">
         <thead class="bg-carbon-900/80 text-gray-400 uppercase font-mono text-xs border-b border-gray-800"><tr><th class="p-3">${hasPositions ? 'Pos' : '#'}</th><th class="p-3">Driver</th><th class="p-3">Best Lap</th><th class="p-3">Gap to Fastest</th></tr></thead>
         <tbody class="divide-y divide-gray-800/60">${rows.map((row, index) => `<tr class="${row.isPlayer ? 'bg-neon-cyan/10 text-neon-cyan font-bold' : 'text-gray-300'}"><td class="p-3 font-mono">${hasPositions ? (row.position ? 'P' + row.position : '—') : index + 1}</td><td class="p-3">${escapeHTML(row.name)}${row.isPlayer ? ' (you)' : ''}</td><td class="p-3 font-mono ${row.bestLapMs === fastest ? 'text-neon-green' : ''}">${formatLapTime(row.bestLapMs)}${row.bestLapMs === fastest ? ' ★' : ''}</td><td class="p-3 font-mono text-gray-400">${row.bestLapMs === fastest ? '—' : '+' + ((row.bestLapMs - fastest) / 1000).toFixed(3)}</td></tr>`).join('')}</tbody></table></div>
@@ -2052,7 +2054,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           ${stat('Your Finish', raceFinishLabel(race), 'text-neon-amber')}
           ${stat('Your Best Lap', formatLapTime(ownBest), 'text-neon-cyan')}
-          ${stat('Fastest Lap', formatLapTime(fastest), 'text-neon-green')}
+          ${stat('Fastest Lap', formatLapTime(fastestOverall), 'text-neon-green')}
           ${stat('Drivers', rows.length || '—')}
         </div>
         ${table}`;

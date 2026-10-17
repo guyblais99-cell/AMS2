@@ -95,6 +95,38 @@ def rows_from_firebase(value):
     return []
 
 
+BACK_TO_BACK_GAP = timedelta(hours=1)
+
+
+def championship_round_blocks(championship):
+    """Group a championship's rounds into chronological blocks where each round starts less than 1 hour after the previous."""
+    rounds = []
+    for plan in rows_from_firebase(championship.get("roundPlans")):
+        start = parse_schedule_time(plan.get("startTime"))
+        if start:
+            rounds.append((start, plan))
+    rounds.sort(key=lambda item: item[0])
+    blocks = []
+    for item in rounds:
+        if blocks and item[0] - blocks[-1][-1][0] < BACK_TO_BACK_GAP:
+            blocks[-1].append(item)
+        else:
+            blocks.append([item])
+    return blocks
+
+
+def more_rounds_pending(championship, round_id, completed, now=None):
+    """True if later rounds in the same back-to-back block are still waiting to be recorded."""
+    now = now or datetime.now(timezone.utc)
+    for block in championship_round_blocks(championship):
+        if any(str(plan.get("id", "")) == str(round_id) for _, plan in block):
+            if now > block[-1][0] + timedelta(hours=3):
+                return False
+            return any(f"championship:{championship.get('id', '')}:{plan.get('id', '')}" not in completed
+                       for _, plan in block)
+    return False
+
+
 def scheduled_active_competition(events, championships, now=None, completed=()):
     """Stay active for the whole event duration; after that only until a result is recorded (3h cap)."""
     now = now or datetime.now(timezone.utc)
@@ -119,17 +151,25 @@ def scheduled_active_competition(events, championships, now=None, completed=()):
                                        "source": "schedule", "startTime": start.isoformat()}))
 
     for championship in rows_from_firebase(championships):
-        for round_plan in rows_from_firebase(championship.get("roundPlans")):
-            start = parse_schedule_time(round_plan.get("startTime"))
-            if not start or not (start - AUTO_ACTIVATION_LEAD <= now <= start + timedelta(hours=3)):
+        for block in championship_round_blocks(championship):
+            block_start = block[0][0]
+            if not (block_start - AUTO_ACTIVATION_LEAD <= now <= block[-1][0] + timedelta(hours=3)):
                 continue
-            if now > start + timedelta(minutes=45) and f"championship:{championship.get('id', '')}:{round_plan.get('id', '')}" in completed:
+            pending = [(start, plan) for start, plan in block
+                       if f"championship:{championship.get('id', '')}:{plan.get('id', '')}" not in completed]
+            if len(block) == 1:
+                start, plan = block[0]
+                if not pending and now > start + timedelta(minutes=45):
+                    continue
+                pending = [(start, plan)]
+            if not pending:
                 continue
-            name = str(championship.get("name") or "Championship")
-            candidates.append((start, {
+            # Back-to-back rounds stay active together and are recorded in chronological order.
+            start, round_plan = pending[0]
+            candidates.append((block_start, {
                 "type": "championship",
                 "id": str(championship.get("id", "")),
-                "name": name,
+                "name": str(championship.get("name") or "Championship"),
                 "source": "schedule",
                 "roundId": str(round_plan.get("id", "")),
                 "roundNumber": int(round_plan.get("roundNumber") or 0),
@@ -720,6 +760,8 @@ class CompanionApp:
                         player_best = min(player_best, own_best) if player_best else own_best
                 elif self.racing:
                     finished_race = False
+                    finished_competition = race_competition
+                    lap_times, own_best_lap = [], None
                     snapshot = self.race_snapshot or fields
                     self.racing = False
                     position = self.to_int(snapshot.get("position"))
@@ -753,6 +795,11 @@ class CompanionApp:
                     race_laps = {}
                     player_best = None
                     if finished_race:
+                        self.events.put(("log", f"Captured {len(lap_times)} driver best laps; your best lap: {own_best_lap or 'none recorded'} ms."))
+                        champ = self.championships.get(str(finished_competition["id"])) if finished_competition["type"] == "championship" else None
+                        if champ and more_rounds_pending(champ, finished_competition.get("roundId"), self.completed_competitions):
+                            self.events.put(("log", "Race captured; next round is within the same block, so monitoring continues."))
+                            continue
                         self.events.put(("log", "Race captured; monitoring stopped. It restarts automatically for the next scheduled race, or press Start monitoring."))
                         self.active_sync_stop_event.set()
                         break
